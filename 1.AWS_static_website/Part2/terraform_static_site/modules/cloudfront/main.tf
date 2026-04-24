@@ -49,6 +49,4 @@ output "cloudfront_url" {
   value = aws_cloudfront_distribution.this.domain_name
 }
 
-output "distribution_arn" {
-  value = aws_cloudfront_distribution.this.arn
-}
+
