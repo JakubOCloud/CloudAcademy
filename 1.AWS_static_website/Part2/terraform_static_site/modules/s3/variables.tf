@@ -1,4 +1,9 @@
-variable "bucket_name" {}
-variable "tags" {}
+variable "bucket_name" {
+  description = "S3 bucket name"
+}
 
-
+variable "tags" {
+  default = {
+    project = "static-website"
+  }
+}
