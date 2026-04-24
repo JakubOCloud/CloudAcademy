@@ -31,6 +31,7 @@ resource "aws_cloudfront_distribution" "this" {
   }
 
   default_root_object = "index.html"
+  web_acl_id          = var.web_acl_arn
 
   viewer_certificate {
     cloudfront_default_certificate = true

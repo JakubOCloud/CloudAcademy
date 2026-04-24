@@ -9,3 +9,7 @@ variable "tags" {
 }
 
 variable "bucket_arn" {}
+
+variable "web_acl_arn" {
+  description = "arn from rule which limits 100request per minute per ip "
+}
