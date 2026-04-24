@@ -3,7 +3,7 @@ resource "aws_s3_bucket" "this" {
   tags   = var.tags
 }
 
-resource "aws_s3_bucket_access_block" "this" {
+resource "aws_s3_bucket_public_access_block" "this" {
   bucket = aws_s3_bucket.this.id
 
   block_public_acls       = true
@@ -12,10 +12,28 @@ resource "aws_s3_bucket_access_block" "this" {
   restrict_public_buckets = false
 }
 
+resource "aws_s3_bucket_policy" "this" {
+  bucket = aws_s3_bucket.this.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "cloudfront.amazonaws.com"
+        }
+        Action   = "s3:GetObject"
+        Resource = "${aws_s3_bucket.this.arn}/*"
+      }
+    ]
+  })
+}
+
 resource "aws_s3_object" "index" {
   bucket       = aws_s3_bucket.this.id
   key          = "index.html"
-  source       = "../../website/index.html"
+  source       = "${path.module}/../../website/index.html"
   content_type = "text/html"
 }
 
