@@ -37,3 +37,16 @@ resource "aws_s3_object" "index" {
   content_type = "text/html"
 }
 
+resource "aws_s3_object" "error-4xx" {
+  bucket       = aws_s3_bucket.this.id
+  key          = "error-4xx.html"
+  source       = "${path.module}/../../website/error-4xx.html"
+  content_type = "text/html"
+}
+
+resource "aws_s3_object" "error-5xx" {
+  bucket       = aws_s3_bucket.this.id
+  key          = "error-5xx.html"
+  source       = "${path.module}/../../website/error-5xx.html"
+  content_type = "text/html"
+}

@@ -43,5 +43,17 @@ resource "aws_cloudfront_distribution" "this" {
     }
   }
 
+  custom_error_response {
+    error_code         = 403
+    response_code      = 403
+    response_page_path = "/error-4xx.html"
+  }
+
+  custom_error_response {
+    error_code         = 500
+    response_code      = 500
+    response_page_path = "/error-4xx.html"
+  }
+
   tags = var.tags
 }
