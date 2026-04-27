@@ -50,9 +50,14 @@ resource "aws_cloudfront_distribution" "this" {
   }
 
   custom_error_response {
+    error_code         = 404
+    response_code      = 404
+    response_page_path = "/error-4xx.html"
+  }
+  custom_error_response {
     error_code         = 500
     response_code      = 500
-    response_page_path = "/error-4xx.html"
+    response_page_path = "/error-5xx.html"
   }
 
   logging_config {
