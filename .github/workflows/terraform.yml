@@ -1,0 +1,87 @@
+name: Terraform Workflow
+
+on:
+  push:
+    branches:
+      - main
+
+    paths:
+      - "1.AWS_static_website/Part2/terraform_static_site/**"
+
+  workflow_dispatch:
+
+jobs:
+  init:
+    runs-on: ubuntu:latest
+
+    defaults:
+      run:
+        working-directory: ./1.AWS_static_website/Part2/terraform_static_site
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+
+      - name: Init
+        run: terraform init
+
+      - name: Format Check
+        run: terraform fmt -check -recursive
+
+      - name: Validate
+        run: terraform validate
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup=tflint@v4
+
+      - name: Run TFLint
+        run: tflint
+
+  plan:
+    needs: init
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./1.AWS_static_website/Part2/terraform_static_site
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+
+      - run: terraform init
+
+      - name: Plan
+        run: terraform plan -out=tfplan
+
+      - name: Uploading tfplan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: 1.AWS_static_website/Part2/terraform_static_site/tfplan
+
+  apply:
+    if: github.event_name == 'workflow_dispatch'
+    needs: plan
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./1.AWS_static_website/Part2/terraform_static_site
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+
+      - run: terraform init
+
+      - name: Download tfplan
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan
+          path: 1.AWS_static_website/Part2/terraform_static_site
+
+      - name: Apply
+        run: terraform apply tfplan
