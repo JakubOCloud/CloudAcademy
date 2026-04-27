@@ -1,6 +1,6 @@
 resource "aws_wafv2_web_acl" "this" {
 
-  name        = "request-limit"
+  name        = "rate-limit"
   description = "Limits requests from each source ip to 100 requests/min"
   scope       = "CLOUDFRONT"
   tags        = var.tags
@@ -10,15 +10,15 @@ resource "aws_wafv2_web_acl" "this" {
   }
 
   visibility_config {
-    cloudwatch_metrics_enabled = false
-    metric_name                = "friendly-metric-name"
-    sampled_requests_enabled   = false
+    cloudwatch_metrics_enabled = true
+    metric_name                = "web-acl"
+    sampled_requests_enabled   = true
   }
 }
 
 
 resource "aws_wafv2_web_acl_rule" "this" {
-  name        = "request-limit-rule"
+  name        = "rate-limit-rule"
   priority    = 1
   web_acl_arn = aws_wafv2_web_acl.this.arn
 
@@ -35,8 +35,8 @@ resource "aws_wafv2_web_acl_rule" "this" {
   }
 
   visibility_config {
-    cloudwatch_metrics_enabled = false
-    metric_name                = "friendly-metric-name"
-    sampled_requests_enabled   = false
+    cloudwatch_metrics_enabled = true
+    metric_name                = "rate-limit-rule"
+    sampled_requests_enabled   = true
   }
 }

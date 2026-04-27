@@ -13,3 +13,7 @@ variable "bucket_arn" {}
 variable "web_acl_arn" {
   description = "arn from rule which limits 100request per minute per ip "
 }
+
+variable "logging_bucket_name" {
+  description = "Domain name of bucket with logs"
+}

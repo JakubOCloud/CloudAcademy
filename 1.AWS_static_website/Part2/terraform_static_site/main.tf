@@ -4,6 +4,10 @@ module "s3" {
   tags        = var.tags
 }
 
+module "logging_bucket" {
+  source = "./modules/logging_bucket"
+}
+
 module "waf" {
   source = "./modules/waf"
   providers = {
@@ -12,9 +16,16 @@ module "waf" {
 }
 
 module "cloudfront" {
-  source             = "./modules/cloudfront"
-  bucket_domain_name = module.s3.bucket_domain_name
-  bucket_arn         = module.s3.bucket_arn
-  tags               = var.tags
-  web_acl_arn        = module.waf.web_acl_arn
+  source              = "./modules/cloudfront"
+  bucket_domain_name  = module.s3.bucket_domain_name
+  bucket_arn          = module.s3.bucket_arn
+  tags                = var.tags
+  web_acl_arn         = module.waf.web_acl_arn
+  logging_bucket_name = module.logging_bucket.logging_bucket_name
+}
+
+module "cloudwatch" {
+  source          = "./modules/cloudwatch"
+  distribution_id = module.cloudfront.distribution_id
+  web_acl_name    = module.waf.web_acl_name
 }

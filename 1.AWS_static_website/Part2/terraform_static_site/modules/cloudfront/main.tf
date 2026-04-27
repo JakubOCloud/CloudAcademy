@@ -55,5 +55,11 @@ resource "aws_cloudfront_distribution" "this" {
     response_page_path = "/error-4xx.html"
   }
 
+  logging_config {
+    bucket          = var.logging_bucket_name
+    prefix          = "cloudfront_logs/"
+    include_cookies = false
+  }
+
   tags = var.tags
 }
