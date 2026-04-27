@@ -21,7 +21,7 @@ resource "aws_cloudwatch_dashboard" "this" {
             [
               "AWS/CloudFront",
               "Requests",
-              "DistributionID", var.distribution_id,
+              "DistributionId", var.distribution_id,
               "Region", "Global"
             ]
           ]
@@ -44,7 +44,7 @@ resource "aws_cloudwatch_dashboard" "this" {
             [
               "AWS/CloudFront",
               "4xxErrorRate",
-              "DistributionID", var.distribution_id,
+              "DistributionId", var.distribution_id,
               "Region", "Global"
             ]
           ]
@@ -67,7 +67,7 @@ resource "aws_cloudwatch_dashboard" "this" {
             [
               "AWS/CloudFront",
               "5xxErrorRate",
-              "DistributionID", var.distribution_id,
+              "DistributionId", var.distribution_id,
               "Region", "Global"
             ]
           ]
@@ -85,14 +85,14 @@ resource "aws_cloudwatch_dashboard" "this" {
           title  = "WAF Blocked Requests"
           view   = "timeSeries"
           region = "us-east-1"
+          stat   = "Sum"
 
           metrics = [
             [
               "AWS/WAFV2",
               "BlockedRequests",
-              "WebACL", var.web_acl_name,
-              "Rule", "request-limit-rule",
-              "Region", "CLOUDFRONT"
+              "WebACL", "rate-limit",
+              "Rule", "rate-limit-rule"
             ]
           ]
         }

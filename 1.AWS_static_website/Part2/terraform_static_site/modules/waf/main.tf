@@ -11,7 +11,7 @@ resource "aws_wafv2_web_acl" "this" {
 
   visibility_config {
     cloudwatch_metrics_enabled = true
-    metric_name                = "web-acl"
+    metric_name                = "rate-limit"
     sampled_requests_enabled   = true
   }
 
