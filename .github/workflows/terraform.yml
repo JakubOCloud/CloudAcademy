@@ -58,10 +58,20 @@ jobs:
       run:
         working-directory: ./1.AWS_static_website/Part2/terraform_static_site
     steps:
-      - uses: actions/checkout@v6
-      - uses: hashicorp/setup-terraform@v4
+      - name: Checkout
+        uses: actions/checkout@v6
 
-      - run: terraform init
+      - name: Configure AWS Credentials (Plan Role)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: arn:aws:iam::366183011726:role/GitHubPlanRole
+          aws-region: eu-central-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+
+      - name: Init
+        run: terraform init
 
       - name: Plan
         run: terraform plan -out=tfplan
@@ -82,7 +92,8 @@ jobs:
         working-directory: ./1.AWS_static_website/Part2/terraform_static_site
 
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout
+        uses: actions/checkout@v6
 
       - name: Configure AWS Credentials (Apply Role)
         uses: aws-actions/configure-aws-credentials@v6
@@ -90,9 +101,11 @@ jobs:
           role-to-assume: arn:aws:iam::366183011726:role/GitHubApplyRole
           aws-region: eu-central-1
 
-      - uses: hashicorp/setup-terraform@v4
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
 
-      - run: terraform init
+      - name: Init
+        run: terraform init
 
       - name: Download tfplan
         uses: actions/download-artifact@v8
