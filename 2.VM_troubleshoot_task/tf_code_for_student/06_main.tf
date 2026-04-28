@@ -36,6 +36,26 @@ resource "aws_subnet" "public" {
   }
 }
 
+resource "aws_route_table" "public" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.igw.id
+  }
+
+  tags = {
+    Name    = "${var.project_name}-public-route-table"
+    Project = var.project_name
+    Owner   = var.owner
+  }
+}
+
+resource "aws_route_table_association" "public" {
+  subnet_id      = aws_subnet.public.id
+  route_table_id = aws_route_table.public.id
+}
+
 ###################
 # SECURITY GROUP
 ###################
@@ -52,6 +72,13 @@ resource "aws_security_group" "ec2" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   tags = {
     Name    = "${var.project_name}-ec2-sg"
     Project = var.project_name
@@ -63,11 +90,19 @@ resource "aws_security_group" "ec2" {
 # EC2 INSTANCE
 ###################
 resource "aws_instance" "nginx_app" {
-  ami                         = "ami-0a854fe96e0b45e4e"
+  ami                         = "ami-0de6934e87badb694"
   instance_type               = var.instance_type
   subnet_id                   = aws_subnet.public.id
-  associate_public_ip_address = false
+  associate_public_ip_address = true
   vpc_security_group_ids      = [aws_security_group.ec2.id]
+
+  user_data = <<-EOF
+  #!/bin/bash
+  yum update -y
+  yum install -y nginx
+  systemctl enable nginx
+  systemctl start nginx
+  EOF
 
   tags = {
     Name    = "${var.project_name}-ec2"

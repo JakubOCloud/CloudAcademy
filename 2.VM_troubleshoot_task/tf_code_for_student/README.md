@@ -5,7 +5,6 @@ later, he contacts you asking if you'd help him deploy the application. During t
 your colleague noticed he couldn't communicate with the EC2 instance. Your task is to
 troubleshoot the issue that prevents communication with the instance via its public IP address.
 
-
 ---
 
 ## 1. Purpose of the Task
@@ -15,6 +14,7 @@ troubleshoot the issue that prevents communication with the instance via its pub
 > **No communication with the EC2 instance via its public IP address.**
 
 **After the fix:**
+
 - The default **Nginx** page is accessible via **HTTP (port 80)**.
 - Administrator Connection with EC2 should be **secured**.
 - The instance can **download packages from the Internet** according to user data.
@@ -33,8 +33,8 @@ troubleshoot the issue that prevents communication with the instance via its pub
 
 ## 3. Best Practices and Tips
 
-- https://docs.aws.amazon.com/vpc/latest/userguide/vpc-security-groups.html  
-- https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-best-practices.html  
+- https://docs.aws.amazon.com/vpc/latest/userguide/vpc-security-groups.html
+- https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-best-practices.html
 - https://docs.aws.amazon.com/vpc/latest/userguide/vpc-security-best-practices.html
 
 ---
@@ -57,3 +57,21 @@ Your goal is to convince your teammate why changing the current approach is wort
 ---
 
 **Good luck!**
+
+## Changes made
+
+- associate_public_ip_address = false > true - ec2 didn't have public ip
+- there was no permission in security group for inbound traffic on port 80 so ingress rule needs to be added
+  ingress {
+  from_port = 80
+  to_port = 80
+  protocol = "tcp"
+  cidr_blocks = ["0.0.0.0/0"]
+  }
+- bad ami? so machine won't even start
+- there is no route table and route to the internet gateway
+- added user data for nginx server
+
+## Possible modifications
+
+- splitiing networking security group and ec2 into modules
