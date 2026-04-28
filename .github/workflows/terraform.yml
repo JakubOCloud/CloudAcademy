@@ -10,6 +10,10 @@ on:
 
   workflow_dispatch:
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   init:
     runs-on: ubuntu:latest
@@ -20,10 +24,16 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+
+      - name: Configure AWS Credentials (Plan Role)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: arn:aws:iam::366183011726:role/GitHubPlanRole
+          aws-region: eu-central-1
 
       - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+        uses: hashicorp/setup-terraform@v4
 
       - name: Init
         run: terraform init
@@ -35,7 +45,7 @@ jobs:
         run: terraform validate
 
       - name: Setup TFLint
-        uses: terraform-linters/setup=tflint@v4
+        uses: terraform-linters/setup-tflint@v6
 
       - name: Run TFLint
         run: tflint
@@ -48,8 +58,8 @@ jobs:
       run:
         working-directory: ./1.AWS_static_website/Part2/terraform_static_site
     steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
+      - uses: actions/checkout@v6
+      - uses: hashicorp/setup-terraform@v4
 
       - run: terraform init
 
@@ -57,7 +67,7 @@ jobs:
         run: terraform plan -out=tfplan
 
       - name: Uploading tfplan artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: tfplan
           path: 1.AWS_static_website/Part2/terraform_static_site/tfplan
@@ -72,13 +82,20 @@ jobs:
         working-directory: ./1.AWS_static_website/Part2/terraform_static_site
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
+      - uses: actions/checkout@v6
+
+      - name: Configure AWS Credentials (Apply Role)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: arn:aws:iam::366183011726:role/GitHubApplyRole
+          aws-region: eu-central-1
+
+      - uses: hashicorp/setup-terraform@v4
 
       - run: terraform init
 
       - name: Download tfplan
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: tfplan
           path: 1.AWS_static_website/Part2/terraform_static_site

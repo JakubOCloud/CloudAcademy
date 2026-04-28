@@ -1,3 +1,14 @@
+module "oidc" {
+  source = "./modules/oidc"
+
+  github_repo     = "JakubOCloud/CloudAcademy"
+  tf_state_bucket = "cloud-academy-tf-state-static-website"
+  lock_table_name = "terraform-locks"
+
+  tags = var.tags
+}
+
+
 module "s3" {
   source      = "./modules/s3"
   bucket_name = var.bucket_name
@@ -29,3 +40,5 @@ module "cloudwatch" {
   distribution_id = module.cloudfront.distribution_id
   web_acl_name    = module.waf.web_acl_name
 }
+
+
