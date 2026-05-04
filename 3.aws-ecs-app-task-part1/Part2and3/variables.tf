@@ -27,6 +27,26 @@ variable "app_port" {
   default     = 8080
 }
 
+variable "ecs_task_cpu" {
+  description = "CPU units for ECS task"
+  default     = 256
+}
+
+variable "ecs_task_memory" {
+  description = "Memory for ECS task"
+  default     = 512
+}
+
+variable "desired_task_count" {
+  description = "Desired number of ECS tasks"
+  default     = 1
+}
+
+variable "max_task_count" {
+  description = "Maximum number of ECS tasks during deployment"
+  default     = 2
+}
+
 variable "tags" {
   default = {
     project = "static-website"

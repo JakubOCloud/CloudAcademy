@@ -35,3 +35,25 @@ module "alb" {
 
   tags = var.tags
 }
+
+module "ecs" {
+  source = "./modules/ecs"
+
+  cluster_name          = "hello-world-cluster"
+  task_family           = "hello-world-task"
+  ecs_task_cpu          = var.ecs_task_cpu
+  ecs_task_memory       = var.ecs_task_memory
+  app_image             = var.app_image_url
+  app_port              = var.app_port
+  log_group_name        = module.cloudwatch.log_group_name
+  desired_task_count    = var.desired_task_count
+  max_task_count        = var.max_task_count
+  target_group_arn      = module.alb.target_group_arn
+  vpc_id                = module.vpc.vpc_id
+  private_subnets_ids   = module.vpc.private_subnet_ids
+  alb_security_group_id = module.alb.security_group_id
+
+  depends_on = [module.alb, module.cloudwatch]
+
+  tags = var.tags
+}
