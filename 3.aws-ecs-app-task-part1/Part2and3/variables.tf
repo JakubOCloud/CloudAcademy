@@ -18,6 +18,9 @@ variable "private_subnet_cidrs" {
   description = "CIDR blocks for private subnets"
 }
 
+variable "app_image_url" {
+  description = "URL to my image"
+}
 
 variable "tags" {
   default = {

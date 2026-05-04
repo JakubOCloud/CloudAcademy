@@ -17,3 +17,11 @@ module "vpc" {
 
   tags = var.tags
 }
+
+module "cloudwatch" {
+  source = "./modules/cloudwatch"
+
+  log_group_name = "/ecs/hello-api"
+
+  tags = var.tags
+}
