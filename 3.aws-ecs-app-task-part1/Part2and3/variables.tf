@@ -22,6 +22,11 @@ variable "app_image_url" {
   description = "URL to my image"
 }
 
+variable "app_port" {
+  description = "Port where app is listening"
+  default     = 8080
+}
+
 variable "tags" {
   default = {
     project = "static-website"
