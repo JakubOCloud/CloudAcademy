@@ -42,6 +42,7 @@ jobs:
           docker push 366183011726.dkr.ecr.eu-central-1.amazonaws.com/hello-world-repo:latest
 
   init:
+    needs: build-and-push
     runs-on: ubuntu-latest
 
     defaults:
