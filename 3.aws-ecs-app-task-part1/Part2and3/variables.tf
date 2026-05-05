@@ -60,7 +60,7 @@ variable "max_task_count" {
 
 variable "enable_auto_scaling" {
   description = "Enable auto scaling for ECS service"
-  type        = number
+  type        = bool
   default     = true
 }
 
