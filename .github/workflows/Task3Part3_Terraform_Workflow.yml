@@ -1,0 +1,143 @@
+name: Terraform Workflow
+
+on:
+  push:
+    branches:
+      - main
+
+    paths:
+      - "3.aws-ecs-app-task-part1/Part2and3/**"
+
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./3.aws-ecs-app-task-part1/Part2and3
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: arn:aws:iam::366183011726:role/GitHubApplyRole
+          aws-region: eu-central-1
+
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin 366183011726.dkr.ecr.eu-central-1.amazonaws.com
+
+      - name: Build and push Docker image
+        run: |
+          docker build -t hello-world-repo ./app
+          docker tag hello-world-repo:latest 366183011726.dkr.ecr.eu-central-1.amazonaws.com/hello-world-repo:latest
+          docker push 366183011726.dkr.ecr.eu-central-1.amazonaws.com/hello-world-repo:latest
+
+  init:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./3.aws-ecs-app-task-part1/Part2and3
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Configure AWS Credentials (Plan Role)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: arn:aws:iam::366183011726:role/GitHubPlanRole
+          aws-region: eu-central-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+
+      - name: Init
+        run: terraform init
+
+      - name: Format Check
+        run: terraform fmt -check -recursive
+
+      - name: Validate
+        run: terraform validate
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v6
+
+      - name: Run TFLint
+        run: tflint
+
+  plan:
+    needs: init
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./3.aws-ecs-app-task-part1/Part2and3
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Configure AWS Credentials (Plan Role)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: arn:aws:iam::366183011726:role/GitHubPlanRole
+          aws-region: eu-central-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+
+      - name: Init
+        run: terraform init
+
+      - name: Plan
+        run: terraform plan -out=tfplan
+
+      - name: Uploading tfplan artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: tfplan
+          path: 3.aws-ecs-app-task-part1/Part2and3/tfplan
+
+  apply:
+    if: github.event_name == 'workflow_dispatch'
+    needs: plan
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./3.aws-ecs-app-task-part1/Part2and3
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Configure AWS Credentials (Apply Role)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: arn:aws:iam::366183011726:role/GitHubApplyRole
+          aws-region: eu-central-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+
+      - name: Init
+        run: terraform init
+
+      - name: Download tfplan
+        uses: actions/download-artifact@v8
+        with:
+          name: tfplan
+          path: 3.aws-ecs-app-task-part1/Part2and3
+
+      - name: Apply
+        run: terraform apply tfplan
