@@ -47,6 +47,41 @@ variable "max_task_count" {
   default     = 2
 }
 
+variable "enable_auto_scaling" {
+  description = "Enable auto scaling for ECS service"
+  default     = true
+}
+
+variable "min_capacity" {
+  description = "Minimum number of ECS tasks"
+  default     = 1
+}
+
+variable "max_capacity" {
+  description = "Maximum number of ECS tasks"
+  default     = 3
+}
+
+variable "cpu_high_threshold" {
+  description = "CPU utilization percentage to scale up"
+  default     = 50
+}
+
+variable "cpu_low_threshold" {
+  description = "CPU utilization percentage to scale down"
+  default     = 25
+}
+
+variable "scale_in_cooldown" {
+  description = "Cooldown period for scalein"
+  default     = 300
+}
+
+variable "scale_out_cooldown" {
+  description = "Cooldown period for scale out"
+  default     = 60
+}
+
 variable "tags" {
   default = {
     project = "static-website"
