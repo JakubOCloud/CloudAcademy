@@ -34,7 +34,7 @@ resource "aws_lb_target_group" "this" {
     unhealthy_threshold = 2
     timeout             = 5
     interval            = 30
-    path                = "/health"
+    path                = "/"
     matcher             = "200"
   }
 
