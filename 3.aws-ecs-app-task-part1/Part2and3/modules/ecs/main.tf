@@ -80,6 +80,8 @@ resource "aws_ecs_service" "this" {
   deployment_minimum_healthy_percent = 100
   deployment_maximum_percent         = 200
 
+  force_new_deployment = true
+
   network_configuration {
     subnets          = var.private_subnets_ids
     security_groups  = [aws_security_group.ecs_tasks.id]

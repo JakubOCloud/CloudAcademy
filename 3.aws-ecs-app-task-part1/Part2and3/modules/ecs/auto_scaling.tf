@@ -1,6 +1,4 @@
 resource "aws_appautoscaling_target" "ecs" {
-  count = var.enable_auto_scaling ? 1 : 0
-
   service_namespace  = "ecs"
   resource_id        = "service/${aws_ecs_cluster.this.name}/${aws_ecs_service.this.name}"
   scalable_dimension = "ecs:service:DesiredCount"
@@ -9,12 +7,10 @@ resource "aws_appautoscaling_target" "ecs" {
 }
 
 resource "aws_appautoscaling_policy" "scale_up" {
-  count = var.enable_auto_scaling ? 1 : 0
-
   name               = "hello-world-scale-up"
-  service_namespace  = aws_appautoscaling_target.ecs[0].service_namespace
-  resource_id        = aws_appautoscaling_target.ecs[0].resource_id
-  scalable_dimension = aws_appautoscaling_target.ecs[0].scalable_dimension
+  service_namespace  = aws_appautoscaling_target.ecs.service_namespace
+  resource_id        = aws_appautoscaling_target.ecs.resource_id
+  scalable_dimension = aws_appautoscaling_target.ecs.scalable_dimension
 
   step_scaling_policy_configuration {
     adjustment_type         = "ChangeInCapacity"
@@ -26,18 +22,13 @@ resource "aws_appautoscaling_policy" "scale_up" {
       scaling_adjustment          = 1
     }
   }
-
-  depends_on = [aws_appautoscaling_target.ecs]
-
 }
 
 resource "aws_appautoscaling_policy" "scale_down" {
-  count = var.enable_auto_scaling ? 1 : 0
-
   name               = "hello-world-scale-down"
-  service_namespace  = aws_appautoscaling_target.ecs[0].service_namespace
-  resource_id        = aws_appautoscaling_target.ecs[0].resource_id
-  scalable_dimension = aws_appautoscaling_target.ecs[0].scalable_dimension
+  service_namespace  = aws_appautoscaling_target.ecs.service_namespace
+  resource_id        = aws_appautoscaling_target.ecs.resource_id
+  scalable_dimension = aws_appautoscaling_target.ecs.scalable_dimension
 
   step_scaling_policy_configuration {
     adjustment_type         = "ChangeInCapacity"
@@ -49,13 +40,9 @@ resource "aws_appautoscaling_policy" "scale_down" {
       scaling_adjustment          = -1
     }
   }
-
-  depends_on = [aws_appautoscaling_target.ecs]
-
 }
 
 resource "aws_cloudwatch_metric_alarm" "cpu_high" {
-  count               = var.enable_auto_scaling ? 1 : 0
   alarm_name          = "hello-world-cpu-high"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 2
@@ -71,12 +58,11 @@ resource "aws_cloudwatch_metric_alarm" "cpu_high" {
     ServiceName = aws_ecs_service.this.name
   }
 
-  alarm_actions = [aws_appautoscaling_policy.scale_up[0].arn]
+  alarm_actions = [aws_appautoscaling_policy.scale_up.arn]
 
 }
 
 resource "aws_cloudwatch_metric_alarm" "cpu_low" {
-  count               = var.enable_auto_scaling ? 1 : 0
   alarm_name          = "hello-world-cpu-low"
   comparison_operator = "LessThanThreshold"
   evaluation_periods  = 5
@@ -92,7 +78,7 @@ resource "aws_cloudwatch_metric_alarm" "cpu_low" {
     ServiceName = aws_ecs_service.this.name
   }
 
-  alarm_actions = [aws_appautoscaling_policy.scale_down[0].arn]
+  alarm_actions = [aws_appautoscaling_policy.scale_down.arn]
 
 }
 

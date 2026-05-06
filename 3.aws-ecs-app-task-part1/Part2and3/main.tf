@@ -62,13 +62,12 @@ module "ecs" {
   private_subnets_ids   = module.vpc.private_subnet_ids
   alb_security_group_id = module.alb.security_group_id
 
-  enable_auto_scaling = var.enable_auto_scaling
-  min_capacity        = var.min_capacity
-  max_capacity        = var.max_capacity
-  cpu_high_threshold  = var.cpu_high_threshold
-  cpu_low_threshold   = var.cpu_low_threshold
-  scale_in_cooldown   = var.scale_in_cooldown
-  scale_out_cooldown  = var.scale_out_cooldown
+  min_capacity       = var.min_capacity
+  max_capacity       = var.max_capacity
+  cpu_high_threshold = var.cpu_high_threshold
+  cpu_low_threshold  = var.cpu_low_threshold
+  scale_in_cooldown  = var.scale_in_cooldown
+  scale_out_cooldown = var.scale_out_cooldown
 
   depends_on = [module.alb, module.cloudwatch]
 

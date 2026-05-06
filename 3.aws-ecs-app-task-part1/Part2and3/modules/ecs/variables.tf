@@ -57,11 +57,6 @@ variable "alb_security_group_id" {
   description = "ALB sg ID"
 }
 
-variable "enable_auto_scaling" {
-  description = "Enable auto scaling for ECS service"
-  default     = true
-}
-
 variable "min_capacity" {
   description = "Minimum number of ECS tasks"
   default     = 1
