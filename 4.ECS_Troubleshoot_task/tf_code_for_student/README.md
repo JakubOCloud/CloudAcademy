@@ -6,7 +6,6 @@
 - maybe add another nat gateway to second AZ
 - fix load balancer
 - role iam?
-- service does not have image attached
 - image is not on ecr?
 - alb does not have target group
 
@@ -25,6 +24,10 @@
 
 - added data source for execution role
 - deleted task role because its not needed
+
+## 13_autoscaling
+
+- Added policy for target tracking and used already existing variable
 
 # Possible changes
 

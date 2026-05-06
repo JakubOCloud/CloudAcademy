@@ -9,3 +9,20 @@ resource "aws_appautoscaling_target" "web" {
   max_capacity       = var.web_max_capacity
 }
 
+resource "aws_appautoscaling_policy" "web" {
+  name               = "cpu-auto-scaling"
+  service_namespace  = aws_appautoscaling_target.web.service_namespace
+  scalable_dimension = aws_appautoscaling_target.web.scalable_dimension
+  resource_id        = aws_appautoscaling_target.web.resource_id
+  policy_type        = "TargetTrackingScaling"
+
+  target_tracking_scaling_policy_configuration {
+    predefined_metric_specification {
+      predefined_metric_type = "ECSServiceAverageCPUUtilization"
+    }
+
+    target_value       = var.cpu_target_percent
+    scale_in_cooldown  = 300
+    scale_out_cooldown = 60
+  }
+}
