@@ -20,8 +20,7 @@ resource "aws_ecs_task_definition" "web" {
   requires_compatibilities = ["FARGATE"]
   cpu                      = "256"
   memory                   = "512"
-  execution_role_arn       = aws_iam_role.task_execution.arn
-  task_role_arn            = aws_iam_role.task_role.arn
+  execution_role_arn       = data.aws_iam_role.ecs_execution.arn
 
   container_definitions = jsonencode([
     {
@@ -56,8 +55,7 @@ resource "aws_ecs_task_definition" "web" {
   }
 
   depends_on = [
-    aws_iam_role.task_execution,
-    aws_iam_role.task_role
+    data.aws_iam_role.ecs_execution
   ]
 }
 
@@ -76,12 +74,12 @@ resource "aws_ecs_service" "web" {
   network_configuration {
     subnets          = [aws_subnet.private_a.id, aws_subnet.private_b.id]
     security_groups  = [aws_security_group.tasks.id]
-    assign_public_ip = false 
+    assign_public_ip = false
   }
 
   load_balancer {
-    container_name   = "web"
-    container_port   = var.container_port
+    container_name = "web"
+    container_port = var.container_port
   }
 
   deployment_controller {
@@ -94,7 +92,7 @@ resource "aws_ecs_service" "web" {
   health_check_grace_period_seconds = 60
 
   lifecycle {
-    ignore_changes = [desired_count] 
+    ignore_changes = [desired_count]
   }
 
   depends_on = [
