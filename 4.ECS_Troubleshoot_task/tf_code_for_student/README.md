@@ -25,3 +25,9 @@
 
 - added data source for execution role
 - deleted task role because its not needed
+
+# Possible changes
+
+- adding NAT to second AZ
+- holding your code in repo with pipelines which automatically build and push your image
+-
