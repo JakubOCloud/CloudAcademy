@@ -1,0 +1,19 @@
+name: Task 3 deploy
+
+on:
+  push:
+    branches:
+      - main
+
+    paths:
+      - "3.aws-ecs-app-task-part1/Part2and3/**"
+
+jobs:
+  terraform:
+    uses: JakubOCloud/CloudAcademy/.github/workflows/terraform-reusable.yml@main
+
+    with:
+      working_directory: 3.aws-ecs-app-task-part1/Part2and3
+      run_docker_build: true
+      docker_image_name: hello-world-repo
+      docker_context: ./app
