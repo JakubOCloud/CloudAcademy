@@ -1,4 +1,4 @@
-name: Static Website Deployment
+name: Task 1 deploy
 
 on:
   push:
@@ -12,7 +12,7 @@ on:
 
 jobs:
   terraform:
-    uses: JakubOCloud/CloudAcademy/.github/workflows/terraform-reusable.yml@main
+    uses: ./.github/workflows/terraform-reusable.yml
 
     with:
       working_directory: ./1.AWS_static_website/Part2/terraform_static_site
