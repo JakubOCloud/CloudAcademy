@@ -1,0 +1,20 @@
+name: Static Website Deployment
+
+on:
+  push:
+    branches:
+      - main
+
+    paths:
+      - "1.AWS_static_website/Part2/terraform_static_site/**"
+
+  workflow_dispatch:
+
+jobs:
+  terraform:
+    uses: JakubOCloud/CloudAcademy/.github/workflows/terraform-reusable.yml@main
+
+    with:
+      working_directory: ./1.AWS_static_website/Part2/terraform_static_site
+
+      run_docker_build: false
