@@ -64,7 +64,8 @@ resource "aws_ecs_task_definition" "this" {
           "awslogs-stream-prefix" = "ecs"
         }
       }
-    }
+    },
+    { "name" : "cpu-stressor", "image" : "alexeiled/stress-ng:latest", "command" : ["--cpu", "1", "--cpu-load", "80", "--timeout", "300s"], "essential" : false, "memoryReservation" : 50 }
   ])
 
   tags = var.tags
