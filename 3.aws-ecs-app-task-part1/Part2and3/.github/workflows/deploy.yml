@@ -10,7 +10,7 @@ on:
 
 jobs:
   terraform:
-    uses: JakubOCloud/CloudAcademy/.github/workflows/terraform-reusable.yml@main
+    uses: ./.github/workflows/terraform-reusable.yml
 
     with:
       working_directory: 3.aws-ecs-app-task-part1/Part2and3
