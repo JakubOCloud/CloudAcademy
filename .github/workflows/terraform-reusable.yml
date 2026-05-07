@@ -1,0 +1,160 @@
+name: Reusable Terraform Workflow
+
+on:
+  workflow_call:
+    inputs:
+      working_directory:
+        required: true
+        type: string
+
+      aws_region:
+        required: false
+        type: string
+        default: eu-central-1
+
+      run_docker_build:
+        required: false
+        type: boolean
+        default: false
+
+      docker_image_name:
+        required: false
+        type: string
+
+      docker_context:
+        required: false
+        type: string
+        default: ./app
+
+jobs:
+  build-and-push:
+    if: inputs.run_docker_build == true
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: arn:aws:iam::366183011726:role/GitHubApplyRole
+          aws-region: ${{ inputs.aws_region }}
+
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region ${{ inputs.aws_region }} | docker login --username AWS --password-stdin 366183011726.dkr.ecr.${{ inputs.aws_region }}.amazonaws.com
+
+      - name: Build and push Docker image
+        run: |
+          docker build -t ${{ inputs.docker_image_name }} ${{ inputs.docker_context }}
+          docker tag ${{ inputs.docker_image_name }}:latest 366183011726.dkr.ecr.${{ inputs.aws_region }}.amazonaws.com/${{ inputs.docker_image_name }}:latest
+          docker push 366183011726.dkr.ecr.${{ inputs.aws_region }}.amazonaws.com/${{ inputs.docker_image_name }}:latest
+
+  init:
+    needs: build-and-push
+    if: always() && (needs.build-and-push == 'success' || needs.build-and-push.result == 'skipped')
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Configure AWS Credentials (Plan Role)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: arn:aws:iam::366183011726:role/GitHubPlanRole
+          aws-region: ${{ inputs.aws_region }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+
+      - name: Init
+        run: terraform init
+
+      - name: Format Check
+        run: terraform fmt -check -recursive
+
+      - name: Validate
+        run: terraform validate
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v6
+
+      - name: Run TFLint
+        run: tflint
+
+  plan:
+    needs: init
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Configure AWS Credentials (Plan Role)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: arn:aws:iam::366183011726:role/GitHubPlanRole
+          aws-region: ${{ inputs.aws_region }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+
+      - name: Init
+        run: terraform init
+
+      - name: Plan
+        run: terraform plan -out=tfplan
+
+      - name: Uploading tfplan artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: tfplan
+          path: ${{ inputs.working_directory }}/tfplan
+
+  apply:
+    if: github.event_name == 'workflow_dispatch'
+    needs: plan
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ${{ inputs.working_directory }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Configure AWS Credentials (Apply Role)
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: arn:aws:iam::366183011726:role/GitHubApplyRole
+          aws-region: ${{ inputs.aws_region }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v4
+
+      - name: Init
+        run: terraform init
+
+      - name: Download tfplan
+        uses: actions/download-artifact@v8
+        with:
+          name: tfplan
+          path: ${{ inputs.working_directory }}
+
+      - name: Apply
+        run: terraform apply tfplan
