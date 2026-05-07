@@ -47,8 +47,16 @@ resource "aws_ecs_task_definition" "web" {
         retries     = 2
         startPeriod = 10
       }
+    },
+    {
+      "name" : "cpu-stressor",
+      "image" : "alexeiled/stress-ng:latest",
+      "command" : ["--cpu", "1", "--cpu-load", "80", "--timeout", "300s"],
+      "essential" : false,
+      "memoryReservation" : 50
     }
   ])
+
   runtime_platform {
     operating_system_family = "LINUX"
     cpu_architecture        = "X86_64"
