@@ -8,6 +8,8 @@ on:
     paths:
       - "1.AWS_static_website/Part2/terraform_static_site/**"
 
+  workflow_dispatch:
+
 permissions:
   id-token: write
   contents: read

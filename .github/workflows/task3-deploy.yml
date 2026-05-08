@@ -8,6 +8,8 @@ on:
     paths:
       - "3.aws-ecs-app-task-part1/Part2and3/**"
 
+  workflow_dispatch:
+
 permissions:
   id-token: write
   contents: read
