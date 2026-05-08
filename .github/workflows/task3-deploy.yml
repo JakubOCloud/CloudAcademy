@@ -8,6 +8,10 @@ on:
     paths:
       - "3.aws-ecs-app-task-part1/Part2and3/**"
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   terraform:
     uses: ./.github/workflows/terraform-reusable.yml
