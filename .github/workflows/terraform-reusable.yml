@@ -26,6 +26,10 @@ on:
         type: string
         default: ./app
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   build-and-push:
     if: inputs.run_docker_build == true
