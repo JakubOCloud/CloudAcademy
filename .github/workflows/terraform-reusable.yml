@@ -101,6 +101,7 @@ jobs:
 
   plan:
     needs: init
+    if: always() && needs.init.result == 'success'
     runs-on: ubuntu-latest
 
     defaults:
@@ -132,11 +133,14 @@ jobs:
           name: tfplan
           path: ${{ inputs.working_directory }}/tfplan
 
-  apply:
-    if: github.event_name == 'workflow_dispatch'
+  aapply:
     needs: plan
-    runs-on: ubuntu-latest
 
+    if: |
+      always() &&
+      github.event_name == 'workflow_dispatch' &&
+      needs.plan.result == 'success'
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: ${{ inputs.working_directory }}
