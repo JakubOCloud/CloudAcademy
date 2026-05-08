@@ -26,10 +26,6 @@ on:
         type: string
         default: ./app
 
-permissions:
-  id-token: write
-  contents: read
-
 jobs:
   build-and-push:
     if: inputs.run_docker_build == true
@@ -71,6 +67,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+
+      - name: Debug OIDC
+        run: |
+          echo "repo=$GITHUB_REPOSITORY"
+          echo "actor=$GITHUB_ACTOR"
+
+          echo "ACTIONS_ID_TOKEN_REQUEST_URL=$ACTIONS_ID_TOKEN_REQUEST_URL"
 
       - name: Configure AWS Credentials (Plan Role)
         uses: aws-actions/configure-aws-credentials@v6
