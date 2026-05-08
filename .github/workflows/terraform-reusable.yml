@@ -57,7 +57,7 @@ jobs:
 
   init:
     needs: build-and-push
-    if: always() && (needs.build-and-push == 'success' || needs.build-and-push.result == 'skipped')
+    if: always() && (needs.build-and-push.result == 'success' || needs.build-and-push.result == 'skipped')
     runs-on: ubuntu-latest
 
     defaults:
