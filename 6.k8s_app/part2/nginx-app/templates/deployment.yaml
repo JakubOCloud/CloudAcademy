@@ -6,7 +6,7 @@ metadata:
   namespace: "{{ .Values.namespace }}"
 
 spec:
-  replicas: { { .Values.replicaCount } }
+  replicas: {{ .Values.replicaCount }}
 
   selector:
     matchLabels:
@@ -26,14 +26,19 @@ spec:
           imagePullPolicy: "{{ .Values.image.pullPolicy }}"
 
           ports:
-            - containerPort: { { .Values.service.port } }
+            - containerPort: {{ .Values.service.port }}
 
-          resources: { { - toYaml .Values.resources | nindent 12 } }
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
 
-          livenessProbe: { { - toYaml .Values.livenessProbe | nindent 12 } }
+          livenessProbe:
+{{ toYaml .Values.livenessProbe | indent 12 }}
 
-          readinessProbe: { { - toYaml .Values.readinessProbe | nindent 12 } }
+          readinessProbe:
+{{ toYaml .Values.readinessProbe | indent 12 }}
 
-          volumeMounts: { { - toYaml .Values.volumeMounts | nindent 12 } }
+          volumeMounts:
+{{ toYaml .Values.volumeMounts | indent 12 }}
 
-      volumes: { { - toYaml .Values.volumes | nindent 8 } }
+      volumes:
+{{ toYaml .Values.volumes | indent 8 }}
