@@ -58,6 +58,10 @@ spec:
             - name: nginx-storage
               mountPath: /usr/share/nginx/html
 
+            - name: nginx-index-volume
+              mountPath: /usr/share/nginx/html/index.html
+              subPath: index.html
+
       volumes:
         - name: nginx-config-volume
           configMap:
@@ -72,3 +76,7 @@ spec:
         - name: nginx-storage
           persistentVolumeClaim:
             claimName: nginx-pvc
+
+        - name: nginx-index-volume
+          configMap:
+            name: nginx-config

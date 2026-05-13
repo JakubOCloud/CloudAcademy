@@ -26,3 +26,9 @@ data:
         }
       }
     }
+  index.html: |
+    <html>
+      <body>
+        <h1>NGINX DZIALA</h1>
+      </body>
+    </html>

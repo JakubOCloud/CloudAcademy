@@ -8,7 +8,7 @@ image:
   # This sets the pull policy for images.
   pullPolicy: IfNotPresent
   # Overrides the image tag whose default is the chart appVersion.
-  tag: latest
+  tag: 1.28.0
 
 # This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
 service:
@@ -40,10 +40,6 @@ readinessProbe:
   initialDelaySeconds: 5
   periodSeconds: 10
 
-auth:
-  username: admin
-  password: admin123
-
 persistence:
   enabled: true
   size: 1Gi
@@ -64,6 +60,10 @@ volumes:
     persistentVolumeClaim:
       claimName: nginx-pvc
 
+  - name: nginx-index-volume
+    configMap:
+      name: nginx-config
+
 # Additional volumeMounts on the output Deployment definition.
 volumeMounts:
   - name: nginx-config-volume
@@ -75,3 +75,7 @@ volumeMounts:
 
   - name: nginx-storage
     mountPath: /usr/share/nginx/html
+
+  - name: nginx-index-volume
+    mountPath: /usr/share/nginx/html/index.html
+    subPath: index.html
