@@ -29,13 +29,13 @@ spec:
             - containerPort: {{ .Values.service.port }}
 
           resources:
-          {{ toYaml .Values.resources | indent 12 }}
+            {{- toYaml .Values.resources | nindent 12 }}
 
           livenessProbe:
-          {{ toYaml .Values.livenessProbe | indent 12 }}
+            {{- toYaml .Values.livenessProbe | nindent 12 }}
 
           readinessProbe:
-          {{ toYaml .Values.readinessProbe | indent 12 }}
+            {{- toYaml .Values.readinessProbe | nindent 12 }}
 
           volumeMounts:
             - name: nginx-config-volume
