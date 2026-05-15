@@ -51,6 +51,27 @@ spec:
             - name: nginx-index-volume
               mountPath: /usr/share/nginx/html/index.html
               subPath: index.html
+        - name: stress-test
+          image: polinux/stress
+
+          command:
+            - stress
+
+          args:
+            - --cpu
+            - "1"
+            - --timeout
+            - "300s"
+          
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "50Mi"
+
+            limits:
+              cpu: "200m"
+              memory: "128Mi"  
+
       volumes:
         - name: nginx-config-volume
           configMap:
