@@ -2,7 +2,7 @@ apiVersion: security.istio.io/v1
 kind: PeerAuthentication
 
 metadata:
-  name: nginx-PeerAuthentication
+  name: nginx-peerauthentication
   namespace: "{{ .Values.namespace }}"
 
 spec:
