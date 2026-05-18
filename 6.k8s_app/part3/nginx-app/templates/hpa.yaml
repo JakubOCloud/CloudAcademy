@@ -5,6 +5,7 @@ kind: HorizontalPodAutoscaler
 
 metadata:
   name: nginx-hpa
+  namespace: "{{ .Values.namespace }}"
 
 spec:
   scaleTargetRef:
