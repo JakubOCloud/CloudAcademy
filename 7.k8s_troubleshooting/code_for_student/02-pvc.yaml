@@ -11,5 +11,5 @@ spec:
   storageClassName: app-storage
   selector:
     matchLabels:
-      type: fast
+      type: local
 
