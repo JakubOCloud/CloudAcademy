@@ -1,0 +1,23 @@
+Why Argo CD is beneficial for deploying applications?
+  
+  Argo is beneficial because it makes your life easier. 
+  Using Argo you don't have to maually run commands to manage your kubernetes clusters, all you have to do is simply commit manifests to your repo and it automatically updates everything.
+  Another usefull feature is rollback. If you commit something that destroys your infrastructure you can simply rollback to your last stable version.
+  It uses Git repository as single source of truth which means that if u change something locally ArgoCD automaticcaly fixes that so it matches config on repo (self-healing).
+  It comes with helpful UI which is very intuitive and simple.
+
+Why mTLS is valuable in Kubernetes clusters?
+
+  Its valuable because it ensures that both client and the server authenticate each other.
+  It encrypts traffic between the pods so even if someone can catch any packets they can't read the data.
+  Overall it makes everything in kubernetes more secure.
+
+When Argo CD should NOT be used and why?
+
+   Small projects, local clusters etc. It adds unnecessary complexity and extra components.
+   Frequently changing resorces. Because argo often tries to keep infrastructure as it is in its source of truth it may couse problems by constantly fixing them.
+
+When mTLS / Service Mesh should NOT be used and why?
+
+  Small projects like one app with few services and low traffic. It again adds a lot of complexity.
+  Resource limited clusters. It can slow your apps by increasing CPU/RAM usage and slightly heighten latency.
