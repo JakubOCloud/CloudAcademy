@@ -13,6 +13,17 @@ After first apply without changing anything this is the message:
 - difference in storageClassName
 - PV has RWO while PVC wants RWM
 
+### 04-deployment.yaml
+- mismatch in template and selector labels
+- replicas set to 0
+- bad image there is no alpines
+- bad configmap name should be app-configs
+- mismatch in names for volumes and volume mounts
+- bad pvc name should be app-pvc
+- nginx is listening on port 80 not 8080
+
+### 05-service.yaml
+- 
 
 ## FIXES :
 
@@ -22,3 +33,14 @@ I changed only 02-pvc to match 01-pv:
 - Changed size to 1Gi
 - storageClassName to app-storage
 - match labels to local
+
+### 04-deployment.yaml
+- set matchlabels to my-app
+- replicas set to 3
+- deleted s after alpine
+- changed configmap name
+- changed vollume name to data
+- changed claimName
+- changed port to 80
+
+### 05-service.yaml
