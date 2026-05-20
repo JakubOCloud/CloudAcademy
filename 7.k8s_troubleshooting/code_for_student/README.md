@@ -23,7 +23,7 @@ After first apply without changing anything this is the message:
 - nginx is listening on port 80 not 8080
 
 ### 05-service.yaml
-- 
+- bad app name in selector
 
 ## FIXES :
 
@@ -44,3 +44,4 @@ I changed only 02-pvc to match 01-pv:
 - changed port to 80
 
 ### 05-service.yaml
+- Changed to my-app
