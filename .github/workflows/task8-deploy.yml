@@ -1,0 +1,28 @@
+name: Task 1 deploy
+
+on:
+  push:
+    branches:
+      - main
+
+    paths:
+      - "8.Cloud-cluster-provisioning-EKS/part2/**"
+
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  terraform:
+    permissions:
+      id-token: write
+      contents: read
+
+    uses: ./.github/workflows/terraform-reusable.yml
+
+    with:
+      working_directory: ./8.Cloud-cluster-provisioning-EKS/part2
+
+      run_docker_build: false
