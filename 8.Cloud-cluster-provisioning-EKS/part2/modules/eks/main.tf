@@ -11,6 +11,8 @@ module "eks" {
   vpc_id     = var.vpc_id
   subnet_ids = var.subnet_ids
 
+  create_kms_key = false
+
   eks_managed_node_groups = {
     workers = {
       instance_types = ["t3.small"]
