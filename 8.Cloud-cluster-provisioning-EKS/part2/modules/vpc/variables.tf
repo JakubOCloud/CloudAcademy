@@ -1,5 +1,5 @@
 variable "tags" {
   default = {
-    project = "eks-nginx"
+    project = "static-website"
   }
 }

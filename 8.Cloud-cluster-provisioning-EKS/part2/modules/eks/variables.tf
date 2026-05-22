@@ -1,5 +1,13 @@
 variable "tags" {
   default = {
-    project = "eks-nginx"
+    project = "static-website"
   }
+}
+
+variable "vpc_id" {
+  type = string
+}
+
+variable "subnet_ids" {
+  type = list(string)
 }
