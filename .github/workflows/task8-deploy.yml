@@ -1,4 +1,4 @@
-name: Task 1 deploy
+name: Task 8 deploy
 
 on:
   push:
