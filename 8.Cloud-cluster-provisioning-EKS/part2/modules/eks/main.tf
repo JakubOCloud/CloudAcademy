@@ -11,7 +11,10 @@ module "eks" {
   vpc_id     = var.vpc_id
   subnet_ids = var.subnet_ids
 
-  create_kms_key = false
+
+  create_kms_key            = false
+  cluster_encryption_config = {}
+  enable_kms_key_rotation   = false
 
   eks_managed_node_groups = {
     workers = {
