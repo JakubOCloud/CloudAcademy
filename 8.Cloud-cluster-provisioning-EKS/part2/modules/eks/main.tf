@@ -11,10 +11,19 @@ module "eks" {
   vpc_id     = var.vpc_id
   subnet_ids = var.subnet_ids
 
-
   create_kms_key            = false
   cluster_encryption_config = {}
   enable_kms_key_rotation   = false
+
+  manage_aws_auth_configmap = true
+
+  aws_auth_roles = [
+    {
+      rolearn  = "arn:aws:sts::366183011726:role/AWSReservedSSO_AdministratorAccess_c6c4e2f33ef77df6"
+      username = "admin"
+      groups   = "[system:masters]"
+    }
+  ]
 
   eks_managed_node_groups = {
     workers = {
@@ -25,3 +34,4 @@ module "eks" {
     }
   }
 }
+
