@@ -9,6 +9,22 @@ module "eks" {
 
   enable_cluster_creator_admin_permissions = true
 
+  access_entries = {
+    admin = {
+      principal_arn = "arn:aws:sts::366183011726:assumed-role/AWSReservedSSO_AdministratorAccess_c6c4e2f33ef77df6/jakubo"
+
+      policy_associations = {
+        admin = {
+          policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+
+          access_scope = {
+            type = "cluster"
+          }
+        }
+      }
+    }
+  }
+
   cluster_endpoint_public_access = true
 
   vpc_id     = var.vpc_id
