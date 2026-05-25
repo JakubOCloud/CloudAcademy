@@ -11,7 +11,7 @@ module "eks" {
 
   access_entries = {
     admin = {
-      principal_arn = "arn:aws:sts::366183011726:assumed-role/AWSReservedSSO_AdministratorAccess_c6c4e2f33ef77df6/jakubo"
+      principal_arn = "arn:aws:iam::366183011726:role/aws-reserved/sso.amazonaws.com/eu-central-1/AWSReservedSSO_AdministratorAccess_c6c4e2f33ef77df6"
 
       policy_associations = {
         admin = {
