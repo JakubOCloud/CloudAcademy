@@ -31,6 +31,7 @@ module "eks" {
   cluster_encryption_config = {}
   enable_kms_key_rotation   = false
 
+  create_aws_auth_configmap = true
   manage_aws_auth_configmap = true
 
   aws_auth_roles = [
