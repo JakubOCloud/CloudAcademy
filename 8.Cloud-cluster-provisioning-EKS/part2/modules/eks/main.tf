@@ -126,3 +126,19 @@ resource "aws_security_group_rule" "bastion_to_eks" {
 
   security_group_id = aws_eks_cluster.this.vpc_config[0].cluster_security_group_id
 }
+
+resource "aws_eks_access_entry" "bastion" {
+  cluster_name  = aws_eks_cluster.this.name
+  principal_arn = var.bastion_role_arn
+  type          = "STANDARD"
+}
+resource "aws_eks_access_policy_association" "bastion_admin" {
+  cluster_name  = aws_eks_cluster.this.name
+  principal_arn = var.bastion_role_arn
+
+  policy_arn = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+
+  access_scope {
+    type = "cluster"
+  }
+}

@@ -15,3 +15,7 @@ variable "subnet_ids" {
 variable "bastion_security_group_id" {
   type = string
 }
+
+variable "bastion_role_arn" {
+  type = string
+}
