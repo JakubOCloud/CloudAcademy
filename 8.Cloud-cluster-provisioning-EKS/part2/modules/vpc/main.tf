@@ -1,6 +1,7 @@
 resource "aws_vpc" "main" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_hostnames = true
+  enable_dns_support   = true
   tags                 = var.tags
 }
 
@@ -23,15 +24,17 @@ resource "aws_subnet" "public_2" {
 }
 
 resource "aws_subnet" "private_1" {
-  vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.0.103.0/24"
-  availability_zone = "eu-central-1a"
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = "10.0.103.0/24"
+  availability_zone       = "eu-central-1a"
+  map_public_ip_on_launch = false
 }
 
 resource "aws_subnet" "private_2" {
-  vpc_id            = aws_vpc.main.id
-  cidr_block        = "10.0.104.0/24"
-  availability_zone = "eu-central-1b"
+  vpc_id                  = aws_vpc.main.id
+  cidr_block              = "10.0.104.0/24"
+  availability_zone       = "eu-central-1b"
+  map_public_ip_on_launch = false
 }
 
 resource "aws_eip" "nat" {
