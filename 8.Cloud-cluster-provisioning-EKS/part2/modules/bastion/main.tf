@@ -40,7 +40,7 @@ resource "aws_vpc_security_group_egress_rule" "all" {
 }
 
 resource "aws_instance" "this" {
-  ami           = ami-036bdae36143a955f
+  ami           = "ami-036bdae36143a955f"
   instance_type = "t3.micro"
   subnet_id     = var.private_subnet_id
 
