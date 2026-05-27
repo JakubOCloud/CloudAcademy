@@ -1,0 +1,30 @@
+FROM maven:3.9.9-eclipse-temurin-17 as builder
+
+WORKDIR /build
+
+COPY pom.xml .
+
+RUN mvn dependency:go-offline
+
+COPY src ./src
+
+RUN mvn clean package -DskipTests
+
+
+
+
+FROM eclipse-temurin:17-jre-alpine
+
+RUN addgroup -S spring && adduser -S spring -G spring
+
+WORKDIR /app
+
+COPY --from=builder /build/target/*.jar app.jar
+
+RUN chown spring:spring /app/app.jar
+
+USER spring
+
+EXPOSE 8080
+
+ENTRYPOINT [ "java", "-jar", "app.jar" ]
