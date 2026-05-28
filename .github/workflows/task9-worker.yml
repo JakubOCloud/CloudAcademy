@@ -1,0 +1,60 @@
+name: Task 9 worker build test
+
+on:
+  push:
+    branches:
+      - main
+
+    paths:
+      - "9.k8s_payment_app/payment-worker/**"
+
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: ./9.k8s_payment_app/payment-worker
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Generate Tag
+        run: echo "SHA_TAG=${GITHUB_SHA::6}" >> $GITHUB_ENV
+        
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: arn:aws:iam::366183011726:role/GitHubApplyRole
+          aws-region: eu-central-1
+
+      - name: Login to Amazon ECR
+        run: |
+          aws ecr get-login-password --region eu-central-1 | docker login --username AWS --password-stdin 366183011726.dkr.ecr.eu-central-1.amazonaws.com
+    
+      - name: Build Docker Image
+        run: |
+          docker build \
+          -f Dockerfile.api \
+          -t 366183011726.dkr.ecr.eu-central-1.amazonaws.com/payment-worker:latest \
+          -t 366183011726.dkr.ecr.eu-central-1.amazonaws.com/payment-worker:${SHA_TAG} \
+          .
+
+      - name: Trivy scan
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: '366183011726.dkr.ecr.eu-central-1.amazonaws.com/payment-worker:${SHA_TAG}'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          vuln-type: 'os,library'
+          severity: 'CRITICAL'
+
+      - name: Push docker image
+        run: |
+          docker push 366183011726.dkr.ecr.eu-central-1.amazonaws.com/payment-worker:latest
+          docker push 366183011726.dkr.ecr.eu-central-1.amazonaws.com/payment-worker:${SHA_TAG}
+       
