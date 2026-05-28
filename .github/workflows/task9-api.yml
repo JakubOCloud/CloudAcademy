@@ -50,7 +50,7 @@ jobs:
       - name: Trivy scan
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: '366183011726.dkr.ecr.eu-central-1.amazonaws.com/payment-api:${SHA_TAG}'
+          image-ref: '366183011726.dkr.ecr.eu-central-1.amazonaws.com/payment-api:latest'
           format: 'table'
           exit-code: '1'
           ignore-unfixed: true
