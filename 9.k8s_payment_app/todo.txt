@@ -1,0 +1,32 @@
+Big picture plan
+- write kubernetes manifests and test them locally
+- write all infrastructure in terraform
+- modify and apply manifests for eks
+- tests
+
+02.06 - 03.06
+Write manifests: 
+- namespace
+- Deployments
+- ConfigMaps
+- Service
+- ingress
+- HPA
+- Secret
+and test them locally with local postgresql, later it will be on rds
+
+04.06 - 05.06
+Write all terraform modules:
+- vpc
+- alb 
+- cloudwatch
+- route53
+- rds
+- eks
+
+08.06  - 9.06
+Applying local k8s to eks
+
+9/10.06 
+tests and finish
+
