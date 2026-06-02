@@ -24,11 +24,16 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
 
+      volumes:
+        - name: worker-storage
+          persistentVolumeClaim:
+            claimName: payment-worker-pvc
+
       containers:
         - name: payment-api
           image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
-
+          
           ports:
             - name: http
               containerPort: 8080
@@ -44,7 +49,7 @@ spec:
 {{ toYaml .Values.api.resources  | indent 12 }}
   
           securityContext:
-            allowPrivilageEscalation: false
+            allowPrivilegeEscalation: false
 
           livenessProbe:
             httpGet:
@@ -59,3 +64,7 @@ spec:
               port: http
             initialDelaySeconds: 15
             periodSeconds: 5
+
+          volumeMounts:
+            - name: worker-storage
+              mountPath: /app/data

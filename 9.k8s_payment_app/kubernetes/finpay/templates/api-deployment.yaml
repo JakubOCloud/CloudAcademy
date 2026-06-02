@@ -24,6 +24,11 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
 
+      volumes:
+        - name: api-storage
+          persistentVolumeClaim:
+            claimName: payment-api-pvc
+
       containers:
         - name: payment-api
           image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"
@@ -44,7 +49,7 @@ spec:
 {{ toYaml .Values.api.resources  | indent 12 }}
   
           securityContext:
-            allowPrivilageEscalation: false
+            allowPrivilegeEscalation: false
 
           livenessProbe:
             httpGet:
@@ -59,3 +64,11 @@ spec:
               port: http
             initialDelaySeconds: 15
             periodSeconds: 5
+
+          volumeMounts:
+            - name: api-storage
+              mountPath: /app/data
+
+      
+
+    
