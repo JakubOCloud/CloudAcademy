@@ -1,78 +1,61 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "finpay.fullname" . }}
+  name: payment-api
+  namespace: {{ .Values.namespace }}
   labels:
-    {{- include "finpay.labels" . | nindent 4 }}
+    app: payment-api
 spec:
-  {{- if not .Values.autoscaling.enabled }}
-  replicas: {{ .Values.replicaCount }}
-  {{- end }}
+  replicas: {{ .Values.api.replicaCount }}
+
   selector:
     matchLabels:
-      {{- include "finpay.selectorLabels" . | nindent 6 }}
+      app: payment-api
+
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
-      annotations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
       labels:
-        {{- include "finpay.labels" . | nindent 8 }}
-        {{- with .Values.podLabels }}
-        {{- toYaml . | nindent 8 }}
-        {{- end }}
+        app: payment-api
+
     spec:
-      {{- with .Values.imagePullSecrets }}
-      imagePullSecrets:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      serviceAccountName: {{ include "finpay.serviceAccountName" . }}
-      {{- with .Values.podSecurityContext }}
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+
       securityContext:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+        runAsNonRoot: true
+        runAsUser: 1000
+
       containers:
-        - name: {{ .Chart.Name }}
-          {{- with .Values.securityContext }}
-          securityContext:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+        - name: payment-api
+          image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+
           ports:
             - name: http
-              containerPort: {{ .Values.service.port }}
-              protocol: TCP
-          {{- with .Values.livenessProbe }}
-          livenessProbe:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-          {{- with .Values.readinessProbe }}
-          readinessProbe:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-          {{- with .Values.resources }}
+              containerPort: 8080
+
+          envFrom:
+            - configMapRef:
+                name: payment-config
+
+            - secretRef:
+                name: payment-secret
+
           resources:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-          {{- with .Values.volumeMounts }}
-          volumeMounts:
-            {{- toYaml . | nindent 12 }}
-          {{- end }}
-      {{- with .Values.volumes }}
-      volumes:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.nodeSelector }}
-      nodeSelector:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.affinity }}
-      affinity:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
-      {{- with .Values.tolerations }}
-      tolerations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
+{{ toYaml .Values.api.resources  | indent 12 }}
+  
+          securityContext:
+            allowPrivilageEscalation: false
+
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+
+          readinessProbe:
+            httpGet:
+              path: /actuator/ready
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 5
