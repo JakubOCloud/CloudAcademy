@@ -50,8 +50,8 @@ worker:
     cpuUtilization: 70
 
 config:
-  APP_ENV: production
-  LOG_LEVEL: INFO
+  APP_ENV: local
+  LOG_LEVEL: DEBUG
 
 secret:
   DB_URL: jdbc:postgresql://localhost:5432/payments

@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-worker
+  namespace: {{ .Values.namespace }}
+
+  labels:
+    app: payment-worker
+
+spec:
+  replicas: {{ .Values.worker.replicaCount }}
+
+  selector:
+    matchLabels:
+      app: payment-worker
+  
+  template:
+    metadata:
+      labels:
+        app: payment-worker
+
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount.name }}
+
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+
+      containers:
+        - name: payment-worker
+          image: "{{ .Values.worker.image.repository }}:{{ .Values.worker.image.tag }}"
+          imagePullPolicy: {{ .Values.global.imagePullPolicy }}
+
+          ports:
+            - containerPort: 8080
+
+          envFrom:
+            - configMapRef:
+                name: payment-config
+
+            - secretRef:
+                name: payment-secret
+
+          resources:
+{{ .Values.worker.resources | indent 12 }}
+          
+          securityContext:
+            allowPrivilageEscalation: false
+
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+
+          readinessProbe:
+            httpGet:
+              path: /actuator/ready
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 5
+
+    
