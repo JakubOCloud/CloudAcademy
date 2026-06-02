@@ -3,17 +3,15 @@ kind: Deployment
 metadata:
   name: payment-worker
   namespace: {{ .Values.namespace }}
-
   labels:
     app: payment-worker
-
 spec:
-  replicas: {{ .Values.worker.replicaCount }}
+  replicas: {{ .Values.api.replicaCount }}
 
   selector:
     matchLabels:
       app: payment-worker
-  
+
   template:
     metadata:
       labels:
@@ -27,12 +25,13 @@ spec:
         runAsUser: 1000
 
       containers:
-        - name: payment-worker
-          image: "{{ .Values.worker.image.repository }}:{{ .Values.worker.image.tag }}"
+        - name: payment-api
+          image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
 
           ports:
-            - containerPort: 8080
+            - name: http
+              containerPort: 8080
 
           envFrom:
             - configMapRef:
@@ -42,23 +41,21 @@ spec:
                 name: payment-secret
 
           resources:
-{{ .Values.worker.resources | indent 12 }}
-          
+{{ toYaml .Values.api.resources  | indent 12 }}
+  
           securityContext:
             allowPrivilageEscalation: false
 
           livenessProbe:
             httpGet:
               path: /actuator/health
-              port: 8080
+              port: http
             initialDelaySeconds: 30
             periodSeconds: 10
 
           readinessProbe:
             httpGet:
               path: /actuator/ready
-              port: 8080
+              port: http
             initialDelaySeconds: 15
             periodSeconds: 5
-
-    
