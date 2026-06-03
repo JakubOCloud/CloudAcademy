@@ -54,7 +54,7 @@ config:
   LOG_LEVEL: DEBUG
 
 secret:
-  PAYMENT_DB_URL: jdbc:postgresql://localhost:5432/payments
+  PAYMENT_DB_URL: jdbc:postgresql://postgres-service:5432/payments
   PAYMENT_DB_USER: payments
   PAYMENT_DB_PASSWORD: payments
   PAYMENT_WORKER_BASE_URL: http://localhost:8090
