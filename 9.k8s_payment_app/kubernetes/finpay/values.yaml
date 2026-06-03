@@ -22,6 +22,7 @@ api:
       memory: 1Gi
 
   autoscaling:
+    enabled: true
     minReplicas: 3
     maxReplicas: 10
     cpuUtilization: 70
@@ -45,6 +46,7 @@ worker:
       memory: 1Gi
 
   autoscaling:
+    enabled: true
     minReplicas: 3
     maxReplicas: 10
     cpuUtilization: 70
@@ -59,7 +61,7 @@ secret:
   PAYMENT_DB_PASSWORD: payments
   PAYMENT_WORKER_BASE_URL: http://localhost:8090
   PAYMENT_WORKER_PORT: 8090
-  PAYMENT_API_BASE_URL: http://localhost:8080
+  PAYMENT_API_BASE_URL: http://payment-api-service:80
   WORKER_CPU_LOAD_MS: 500
 
 
