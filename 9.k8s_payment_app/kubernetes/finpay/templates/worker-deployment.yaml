@@ -6,7 +6,7 @@ metadata:
   labels:
     app: payment-worker
 spec:
-  replicas: {{ .Values.api.replicaCount }}
+  replicas: {{ .Values.worker.replicaCount }}
 
   selector:
     matchLabels:
@@ -30,8 +30,8 @@ spec:
             claimName: payment-worker-pvc
 
       containers:
-        - name: payment-api
-          image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"
+        - name: payment-worker
+          image: "{{ .Values.worker.image.repository }}:{{ .Values.worker.image.tag }}"
           imagePullPolicy: {{ .Values.global.imagePullPolicy }}
           
           ports:
@@ -46,7 +46,7 @@ spec:
                 name: payment-secret
 
           resources:
-{{ toYaml .Values.api.resources  | indent 12 }}
+{{ toYaml .Values.worker.resources  | indent 12 }}
   
           securityContext:
             allowPrivilegeEscalation: false
