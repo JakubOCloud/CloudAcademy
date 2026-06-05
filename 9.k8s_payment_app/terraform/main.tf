@@ -29,3 +29,11 @@ module "vpc" {
     "10.0.23.0/24"
   ]
 }
+
+module "eks" {
+  source = "./modules/eks"
+
+  cluster_name = "finpay"
+
+  private_subnet_ids = module.vpc.private_app_subnet_ids
+}
