@@ -1,39 +1,39 @@
 module "vpc" {
   source = "./modules/vpc"
 
-  project_name = "finpay"
+  project_name = var.project_name
 
-  vpc_cidr = "10.0.0.0/16"
+  vpc_cidr = var.vpc_cidr
 
-  availability_zones = [
-    "eu-central-1a",
-    "eu-central-1b",
-    "eu-central-1c"
-  ]
+  availability_zones = var.availability_zones
 
-  public_subnets = [
-    "10.0.1.0/24",
-    "10.0.2.0/24",
-    "10.0.3.0/24"
-  ]
+  public_subnets = var.public_subnets
 
-  private_app_subnets = [
-    "10.0.11.0/24",
-    "10.0.12.0/24",
-    "10.0.13.0/24"
-  ]
+  private_app_subnets = var.private_app_subnets
 
-  private_db_subnets = [
-    "10.0.21.0/24",
-    "10.0.22.0/24",
-    "10.0.23.0/24"
-  ]
+  private_db_subnets = var.private_db_subnets
 }
 
 module "eks" {
   source = "./modules/eks"
 
-  cluster_name = "finpay"
+  cluster_name = var.cluster_name
 
   private_subnet_ids = module.vpc.private_app_subnet_ids
+}
+
+module "rds" {
+  source = "./modules/rds"
+
+  project_name = var.project_name
+
+  vpc_id = module.vpc.vpc_id
+
+  private_db_subnet_ids = module.vpc.private_db_subnet_ids
+
+  private_app_subnets = var.private_app_subnets
+
+  db_name = var.db_name
+
+  db_username = var.db_username
 }
