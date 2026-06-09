@@ -29,3 +29,7 @@ private_db_subnets = [
   "10.0.22.0/24",
   "10.0.23.0/24"
 ]
+
+postgres_db_name = "payments"
+
+postgres_db_username = "payments"

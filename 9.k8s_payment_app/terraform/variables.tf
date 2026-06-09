@@ -30,10 +30,10 @@ variable "cluster_name" {
   type = string
 }
 
-variable "db_name" {
+variable "postgres_db_name" {
   type = string
 }
 
-variable "db_username" {
+variable "postgres_db_username" {
   type = string
 }

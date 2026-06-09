@@ -1,7 +1,7 @@
 resource "aws_db_subnet_group" "postgres" {
   name = "${var.project_name}-db-subnets"
 
-  subnet_ids = aws_subnet.private_db[*].id
+  subnet_ids = var.private_db_subnet_ids
 
   tags = {
     Name = "${var.project_name}-db-subnets"
@@ -11,7 +11,7 @@ resource "aws_db_subnet_group" "postgres" {
 resource "aws_security_group" "rds" {
   name        = "${var.project_name}-rds"
   description = "RDS PostgreSQL Security Group"
-  vpc_id      = aws_vpc.this.id
+  vpc_id      = var.vpc_id
 
   ingress {
     description = "PostgreSQL from EKS nodes"

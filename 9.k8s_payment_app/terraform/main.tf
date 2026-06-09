@@ -33,7 +33,7 @@ module "rds" {
 
   private_app_subnets = var.private_app_subnets
 
-  db_name = var.db_name
+  db_name = var.postgres_db_name
 
-  db_username = var.db_username
+  db_username = var.postgres_db_username
 }
