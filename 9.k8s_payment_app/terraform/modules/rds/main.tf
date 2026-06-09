@@ -75,3 +75,19 @@ resource "aws_db_instance" "postgres" {
 
   skip_final_snapshot = true
 }
+
+resource "aws_secretsmanager_secret" "postgres" {
+  name = "${var.project_name}-postgres"
+}
+
+resource "aws_secretsmanager_secret_version" "postgres" {
+  secret_id = aws_secretsmanager_secret.postgres.id
+
+  secret_string = jsonencode({
+    username = var.db_username
+    password = random_password.postgres.result
+    endpoint = aws_db_instance.postgres.address
+    port     = aws_db_instance.postgres.port
+    database = aws_db_instance.postgres.db_name
+  })
+}

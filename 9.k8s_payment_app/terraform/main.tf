@@ -20,6 +20,8 @@ module "eks" {
   cluster_name = var.cluster_name
 
   private_subnet_ids = module.vpc.private_app_subnet_ids
+
+  db_secret_arn = module.rds.secret_arn
 }
 
 module "rds" {
