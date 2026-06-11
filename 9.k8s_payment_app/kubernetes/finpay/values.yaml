@@ -55,17 +55,6 @@ config:
   APP_ENV: local
   LOG_LEVEL: DEBUG
 
-secret:
-  PAYMENT_DB_URL: jdbc:postgresql://postgres-service:5432/payments
-  PAYMENT_DB_USER: payments
-  PAYMENT_DB_PASSWORD: payments
-  PAYMENT_WORKER_BASE_URL: http://localhost:8090
-  PAYMENT_WORKER_PORT: 8090
-  PAYMENT_API_BASE_URL: http://payment-api-service:80
-  WORKER_CPU_LOAD_MS: 500
-
-
-
 ingress:
   enabled: true
   className: nginx

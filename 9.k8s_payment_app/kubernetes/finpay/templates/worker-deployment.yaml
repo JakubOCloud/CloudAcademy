@@ -43,7 +43,7 @@ spec:
                 name: payment-config
 
             - secretRef:
-                name: payment-secret
+                name: postgres-secret
 
           resources:
 {{ toYaml .Values.worker.resources  | indent 12 }}
