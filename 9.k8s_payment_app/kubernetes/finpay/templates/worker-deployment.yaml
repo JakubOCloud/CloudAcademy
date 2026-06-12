@@ -24,11 +24,6 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
 
-      volumes:
-        - name: worker-storage
-          persistentVolumeClaim:
-            claimName: payment-worker-pvc
-
       containers:
         - name: payment-worker
           image: "{{ .Values.worker.image.repository }}:{{ .Values.worker.image.tag }}"
@@ -36,7 +31,7 @@ spec:
           
           ports:
             - name: http
-              containerPort: 8080
+              containerPort: 8090
 
           envFrom:
             - configMapRef:
@@ -60,11 +55,7 @@ spec:
 
           readinessProbe:
             httpGet:
-              path: /actuator/ready
+              path: /actuator/health
               port: http
             initialDelaySeconds: 15
             periodSeconds: 5
-
-          volumeMounts:
-            - name: worker-storage
-              mountPath: /app/data

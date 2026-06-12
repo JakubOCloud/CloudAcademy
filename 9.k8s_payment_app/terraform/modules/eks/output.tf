@@ -18,6 +18,6 @@ output "external_secrets_role_arn" {
   value = aws_iam_role.external_secrets.arn
 }
 
-output "cluster_ca" {
+output "cluster_certificate_authority_data" {
   value = aws_eks_cluster.this.certificate_authority[0].data
 }

@@ -7,8 +7,8 @@ api:
   replicaCount: 3
 
   image:
-    repository: payment-api
-    tag: 1.0.0
+    repository: 366183011726.dkr.ecr.eu-central-1.amazonaws.com/payment-api
+    tag: 8121bc
 
   service:
     port: 8080
@@ -31,8 +31,8 @@ worker:
   replicaCount: 3
 
   image:
-    repository: payment-worker
-    tag: 1.0.0
+    repository: 366183011726.dkr.ecr.eu-central-1.amazonaws.com/payment-worker
+    tag: 8121bc
 
   service:
     port: 8080

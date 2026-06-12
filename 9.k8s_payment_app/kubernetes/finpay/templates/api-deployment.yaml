@@ -24,11 +24,6 @@ spec:
         runAsNonRoot: true
         runAsUser: 1000
 
-      volumes:
-        - name: api-storage
-          persistentVolumeClaim:
-            claimName: payment-api-pvc
-
       containers:
         - name: payment-api
           image: "{{ .Values.api.image.repository }}:{{ .Values.api.image.tag }}"
@@ -37,10 +32,6 @@ spec:
           ports:
             - name: http
               containerPort: 8080
-
-          env:
-            - name: PAYMENT_DB_URL
-              value: "jdbc:postgresql://$(DB_HOST):$(DB_PORT)/$(DB_NAME)"
 
           envFrom:
             - configMapRef:
@@ -64,15 +55,10 @@ spec:
 
           readinessProbe:
             httpGet:
-              path: /actuator/ready
+              path: /actuator/health
               port: http
             initialDelaySeconds: 15
             periodSeconds: 5
-
-          volumeMounts:
-            - name: api-storage
-              mountPath: /app/data
-
       
 
     
