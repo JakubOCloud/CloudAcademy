@@ -1,0 +1,45 @@
+resource "kubernetes_manifest" "postgres_external_secret" {
+  manifest = {
+    apiVersion = "external-secrets.io/v1"
+    kind       = "ExternalSecret"
+
+    metadata = {
+      name      = "postgres-secret"
+      namespace = "payment-system"
+    }
+
+    spec = {
+      refreshInterval = "1h"
+
+      secretStoreRef = {
+        name = "aws-secretsmanager"
+        kind = "ClusterSecretStore"
+      }
+
+      target = {
+        name = "postgres-secret"
+
+        template = {
+          data = {
+            PAYMENT_DB_USER     = "{{ .username }}"
+            PAYMENT_DB_PASSWORD = "{{ .password }}"
+            PAYMENT_DB_URL      = "jdbc:postgresql://{{ .endpoint }}:{{ .port }}/{{ .database }}"
+          }
+        }
+      }
+
+      dataFrom = [
+        {
+          extract = {
+            key = "finpay-postgres"
+          }
+        }
+      ]
+    }
+  }
+
+  depends_on = [
+    kubernetes_manifest.cluster_secret_store,
+    kubernetes_namespace.payment_system
+  ]
+}

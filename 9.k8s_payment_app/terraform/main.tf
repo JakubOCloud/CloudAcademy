@@ -24,6 +24,8 @@ module "eks" {
   db_secret_arn = module.rds.secret_arn
 }
 
+
+
 module "rds" {
   source = "./modules/rds"
 
@@ -38,4 +40,12 @@ module "rds" {
   db_name = var.postgres_db_name
 
   db_username = var.postgres_db_username
+}
+
+module "addons" {
+  source = "./modules/addons"
+
+  depends_on = [
+    module.eks
+  ]
 }
