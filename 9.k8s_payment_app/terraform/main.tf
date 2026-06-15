@@ -47,7 +47,7 @@ module "addons" {
 
   cluster_name            = module.eks.cluster_name
   vpc_id                  = module.vpc.vpc_id
-  alb_controller_role_arn = var.alb_controller_role_arn
+  alb_controller_role_arn = module.eks.alb_controller_role_arn
 
   depends_on = [
     module.eks

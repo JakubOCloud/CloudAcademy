@@ -7,4 +7,5 @@ metadata:
 data:
   APP_ENV: "{{ .Values.config.APP_ENV }}"
   LOG_LEVEL: "{{ .Values.config.LOG_LEVEL }}"
-  
+  PAYMENT_WORKER_BASE_URL: http://payment-worker-service
+  PAYMENT_API_BASE_URL: http://payment-api-service
