@@ -33,3 +33,5 @@ private_db_subnets = [
 postgres_db_name = "payments"
 
 postgres_db_username = "payments"
+
+alb_controller_role_arn = "arn:aws:iam::366183011726:role/AmazonEKSLoadBalancerControllerRole"

@@ -37,3 +37,7 @@ variable "postgres_db_name" {
 variable "postgres_db_username" {
   type = string
 }
+
+variable "alb_controller_role_arn" {
+  type = string
+}
