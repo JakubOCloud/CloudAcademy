@@ -15,6 +15,11 @@ resource "helm_release" "metrics_server" {
     name  = "image.repository"
     value = "366183011726.dkr.ecr.eu-central-1.amazonaws.com/k8s/metrics-server/metrics-server"
   }
+
+  set {
+    name  = "image.tag"
+    value = "v0.8.0"
+  }
 }
 
 resource "helm_release" "external_secrets" {
@@ -55,5 +60,6 @@ resource "helm_release" "external_secrets" {
     value = "v2.6.0"
   }
 }
+
 
 
