@@ -45,6 +45,9 @@ module "rds" {
 module "addons" {
   source = "./modules/addons"
 
+  cluster_name = module.eks.cluster_name
+  vpc_id       = module.vpc.vpc_id
+
   depends_on = [
     module.eks
   ]

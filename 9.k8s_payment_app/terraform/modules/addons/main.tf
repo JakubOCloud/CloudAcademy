@@ -61,5 +61,52 @@ resource "helm_release" "external_secrets" {
   }
 }
 
+resource "helm_release" "aws_load_balancer_controller" {
+  name      = "aws-load-balancer-controller"
+  namespace = "kube-system"
+
+  repository = "https://aws.github.io/eks-charts"
+  chart      = "aws-load-balancer-controller"
+
+  set {
+    name  = "clusterName"
+    value = var.cluster_name
+  }
+
+  set {
+    name  = "serviceAccount.create"
+    value = "false"
+  }
+
+  set {
+    name  = "serviceAccount.name"
+    value = "aws-load-balancer-controller"
+  }
+
+  set {
+    name  = "region"
+    value = "eu-central-1"
+  }
+
+  set {
+    name  = "vpcId"
+    value = var.vpc_id
+  }
+
+  set {
+    name  = "image.repository"
+    value = "366183011726.dkr.ecr.eu-central-1.amazonaws.com/aws-load-balancer-controller"
+  }
+
+  set {
+    name  = "image.tag"
+    value = "v3.4.0"
+  }
+
+  depends_on = [
+    kubernetes_service_account.alb_controller
+  ]
+}
+
 
 
