@@ -3,3 +3,4 @@
 .vscode
 values.txt
 terraform.tfstate
+trust-policy.json
