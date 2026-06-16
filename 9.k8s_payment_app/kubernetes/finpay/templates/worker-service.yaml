@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: payment-worker-service
+  namespace: payment-system
+spec:
+  selector:
+    app: payment-worker
+
+  ports:
+    - port: 80
+      targetPort: 8090
+      protocol: TCP
+
+  type: ClusterIP

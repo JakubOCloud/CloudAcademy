@@ -59,6 +59,10 @@ resource "helm_release" "external_secrets" {
     name  = "certController.image.tag"
     value = "v2.6.0"
   }
+
+  depends_on = [
+    helm_release.aws_load_balancer_controller
+  ]
 }
 
 resource "kubernetes_service_account" "alb_controller" {
@@ -119,5 +123,38 @@ resource "helm_release" "aws_load_balancer_controller" {
   ]
 }
 
+resource "helm_release" "fluent_bit" {
+  name      = "aws-for-fluent-bit"
+  namespace = "amazon-cloudwatch"
 
+  create_namespace = true
+
+  repository = "https://aws.github.io/eks-charts"
+  chart      = "aws-for-fluent-bit"
+
+  set {
+    name  = "cloudWatch.region"
+    value = "eu-central-1"
+  }
+
+  set {
+    name  = "cloudWatch.logGroupName"
+    value = "/eks/finpay/application"
+  }
+
+  set {
+    name  = "cloudWatch.logStreamPrefix"
+    value = "pod-"
+  }
+
+  set {
+    name  = "image.repository"
+    value = "366183011726.dkr.ecr.eu-central-1.amazonaws.com/aws-for-fluent-bit"
+  }
+
+  set {
+    name  = "image.tag"
+    value = "stable"
+  }
+}
 
