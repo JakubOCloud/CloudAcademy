@@ -48,8 +48,22 @@ module "addons" {
   cluster_name            = module.eks.cluster_name
   vpc_id                  = module.vpc.vpc_id
   alb_controller_role_arn = module.eks.alb_controller_role_arn
+  fluent_bit_role_arn     = module.eks.fluent_bit_role_arn
 
   depends_on = [
     module.eks
   ]
+}
+
+module "cloudwatch_observability" {
+  source = "./modules/cloudwatch-observability"
+
+  cluster_name = module.eks.cluster_name
+}
+
+module "cloudwatch_alarms" {
+  source = "./modules/cloudwatch-alarms"
+
+  cluster_name  = module.eks.cluster_name
+  db_identifier = module.rds.db_instance_identifier
 }

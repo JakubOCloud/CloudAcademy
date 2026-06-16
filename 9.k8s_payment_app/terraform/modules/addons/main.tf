@@ -123,6 +123,17 @@ resource "helm_release" "aws_load_balancer_controller" {
   ]
 }
 
+resource "kubernetes_service_account" "fluent_bit" {
+  metadata {
+    name      = "aws-for-fluent-bit"
+    namespace = "amazon-cloudwatch"
+
+    annotations = {
+      "eks.amazonaws.com/role-arn" = var.fluent_bit_role_arn
+    }
+  }
+}
+
 resource "helm_release" "fluent_bit" {
   name      = "aws-for-fluent-bit"
   namespace = "amazon-cloudwatch"
@@ -133,18 +144,23 @@ resource "helm_release" "fluent_bit" {
   chart      = "aws-for-fluent-bit"
 
   set {
-    name  = "cloudWatch.region"
+    name  = "cloudWatchLogs.region"
     value = "eu-central-1"
   }
 
   set {
-    name  = "cloudWatch.logGroupName"
+    name  = "cloudWatchLogs.logGroupName"
     value = "/eks/finpay/application"
   }
 
   set {
-    name  = "cloudWatch.logStreamPrefix"
+    name  = "cloudWatchLogs.logStreamPrefix"
     value = "pod-"
+  }
+
+  set {
+    name  = "cloudWatchLogs.autoCreateGroup"
+    value = "true"
   }
 
   set {
@@ -156,5 +172,19 @@ resource "helm_release" "fluent_bit" {
     name  = "image.tag"
     value = "stable"
   }
+
+  set {
+    name  = "serviceAccount.create"
+    value = "false"
+  }
+
+  set {
+    name  = "serviceAccount.name"
+    value = "aws-for-fluent-bit"
+  }
+
+  depends_on = [
+    kubernetes_service_account.fluent_bit
+  ]
 }
 

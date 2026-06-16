@@ -14,3 +14,7 @@ output "password" {
 output "secret_arn" {
   value = aws_secretsmanager_secret.postgres.arn
 }
+
+output "db_instance_identifier" {
+  value = aws_db_instance.postgres.id
+}

@@ -9,3 +9,7 @@ variable "vpc_id" {
 variable "alb_controller_role_arn" {
   type = string
 }
+
+variable "fluent_bit_role_arn" {
+  type = string
+}
