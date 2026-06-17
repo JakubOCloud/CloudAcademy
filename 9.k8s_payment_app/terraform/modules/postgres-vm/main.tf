@@ -24,3 +24,63 @@ resource "aws_security_group" "postgres" {
     ]
   }
 }
+
+resource "aws_iam_role" "postgres_vm" {
+  name = "finpay-postgres-vm-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Principal = {
+        Service = "ec2.amazonaws.com"
+      }
+      Action = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "ssm" {
+  role       = aws_iam_role.postgres_vm.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+resource "aws_iam_instance_profile" "postgres_vm" {
+  name = "finpay-postgres-vm-profile"
+  role = aws_iam_role.postgres_vm.name
+}
+
+data "aws_ami" "al2023" {
+  most_recent = true
+
+  owners = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["al2023-ami-*-x86_64"]
+  }
+}
+
+resource "aws_instance" "postgres" {
+  ami           = data.aws_ami.al2023.id
+  instance_type = "t3.small"
+
+  subnet_id = var.private_subnet_id
+
+  vpc_security_group_ids = [
+    aws_security_group.postgres.id
+  ]
+
+  iam_instance_profile = aws_iam_instance_profile.postgres_vm.name
+
+  user_data = file("${path.module}/user-data.sh")
+
+  root_block_device {
+    volume_size = 30
+    volume_type = "gp3"
+  }
+
+  tags = {
+    Name = "finpay-postgres"
+  }
+}
