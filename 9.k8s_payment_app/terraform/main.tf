@@ -42,6 +42,27 @@ module "rds" {
   db_username = var.postgres_db_username
 }
 
+module "postgres_vm" {
+  source = "./modules/postgres-vm"
+
+  vpc_id            = module.vpc.vpc_id
+  private_subnet_id = module.vpc.private_db_subnet_ids[0]
+}
+
+module "database_secret" {
+  source = "./modules/database-secret"
+
+  project_name = var.project_name
+
+  db_endpoint = module.postgres_vm.private_ip
+  db_port     = module.postgres_vm.db_port
+  db_name     = module.postgres_vm.db_name
+
+  db_username = module.postgres_vm.db_username
+  db_password = module.postgres_vm.db_password
+}
+
+
 module "addons" {
   source = "./modules/addons"
 
@@ -68,9 +89,3 @@ module "cloudwatch_alarms" {
   db_identifier = module.rds.db_instance_identifier
 }
 
-module "postgres_vm" {
-  source = "./modules/postgres-vm"
-
-  vpc_id            = module.vpc.vpc_id
-  private_subnet_id = module.vpc.private_db_subnet_ids[0]
-}

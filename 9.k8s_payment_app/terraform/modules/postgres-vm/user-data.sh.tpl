@@ -10,9 +10,13 @@ systemctl enable postgresql
 systemctl start postgresql
 
 sudo -u postgres psql <<EOF
-ALTER USER postgres PASSWORD 'postgres123';
+CREATE USER payments WITH PASSWORD '${postgres_password}';
 
-CREATE DATABASE payments;
+CREATE DATABASE payments OWNER payments;
+
+GRANT ALL PRIVILEGES
+ON DATABASE payments
+TO payments;
 EOF
 
 sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" \

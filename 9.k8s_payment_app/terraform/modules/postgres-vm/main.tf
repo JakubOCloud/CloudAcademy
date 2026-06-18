@@ -73,7 +73,12 @@ resource "aws_instance" "postgres" {
 
   iam_instance_profile = aws_iam_instance_profile.postgres_vm.name
 
-  user_data = file("${path.module}/user-data.sh")
+  user_data = templatefile(
+    "${path.module}/user-data.sh.tpl",
+    {
+      postgres_password = random_password.postgres.result
+    }
+  )
 
   root_block_device {
     volume_size = 30
@@ -83,4 +88,9 @@ resource "aws_instance" "postgres" {
   tags = {
     Name = "finpay-postgres"
   }
+}
+
+resource "random_password" "postgres" {
+  length  = 24
+  special = false
 }
