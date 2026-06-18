@@ -67,3 +67,10 @@ module "cloudwatch_alarms" {
   cluster_name  = module.eks.cluster_name
   db_identifier = module.rds.db_instance_identifier
 }
+
+module "postgres_vm" {
+  source = "./modules/postgres-vm"
+
+  vpc_id            = module.vpc.vpc_id
+  private_subnet_id = module.vpc.private_db_subnet_ids[0]
+}
