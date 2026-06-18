@@ -91,6 +91,7 @@ resource "aws_instance" "postgres" {
 }
 
 resource "random_password" "postgres" {
-  length  = 24
-  special = false
+  length           = 24
+  special          = true
+  override_special = "!#$%^&*()-_=+[]{}<>:?"
 }

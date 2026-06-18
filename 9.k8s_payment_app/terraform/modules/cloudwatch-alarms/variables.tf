@@ -2,6 +2,6 @@ variable "cluster_name" {
   type = string
 }
 
-variable "db_identifier" {
+variable "postgres_instance_id" {
   type = string
 }

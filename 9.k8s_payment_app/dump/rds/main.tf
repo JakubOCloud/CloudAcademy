@@ -77,12 +77,12 @@ resource "aws_db_instance" "postgres" {
   skip_final_snapshot = true
 }
 
-resource "aws_secretsmanager_secret" "postgres" {
+/*resource "aws_secretsmanager_secret" "postgres" {
   name                    = "${var.project_name}-postgres"
   recovery_window_in_days = 0
-}
+}*/
 
-resource "aws_secretsmanager_secret_version" "postgres" {
+/*resource "aws_secretsmanager_secret_version" "postgres" {
   secret_id = aws_secretsmanager_secret.postgres.id
 
   secret_string = jsonencode({
@@ -92,4 +92,4 @@ resource "aws_secretsmanager_secret_version" "postgres" {
     port     = aws_db_instance.postgres.port
     database = aws_db_instance.postgres.db_name
   })
-}
+}*/

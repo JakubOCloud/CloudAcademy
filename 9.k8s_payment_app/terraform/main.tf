@@ -21,12 +21,12 @@ module "eks" {
 
   private_subnet_ids = module.vpc.private_app_subnet_ids
 
-  db_secret_arn = module.rds.secret_arn
+  db_secret_arn = module.database_secret.secret_arn
 }
 
 
 
-module "rds" {
+/*module "rds" {
   source = "./modules/rds"
 
   project_name = var.project_name
@@ -40,7 +40,7 @@ module "rds" {
   db_name = var.postgres_db_name
 
   db_username = var.postgres_db_username
-}
+}*/
 
 module "postgres_vm" {
   source = "./modules/postgres-vm"
@@ -85,7 +85,7 @@ module "cloudwatch_observability" {
 module "cloudwatch_alarms" {
   source = "./modules/cloudwatch-alarms"
 
-  cluster_name  = module.eks.cluster_name
-  db_identifier = module.rds.db_instance_identifier
+  cluster_name         = module.eks.cluster_name
+  postgres_instance_id = module.postgres_vm.instance_id
 }
 

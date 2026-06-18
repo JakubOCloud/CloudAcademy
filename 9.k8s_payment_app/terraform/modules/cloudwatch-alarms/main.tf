@@ -1,10 +1,10 @@
-resource "aws_cloudwatch_metric_alarm" "rds_cpu_high" {
-  alarm_name          = "finpay-rds-high-cpu"
+resource "aws_cloudwatch_metric_alarm" "postgres_vm_cpu_high" {
+  alarm_name          = "finpay-postgres-vm-high-cpu"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 2
 
   metric_name = "CPUUtilization"
-  namespace   = "AWS/RDS"
+  namespace   = "AWS/EC2"
 
   period    = 300
   statistic = "Average"
@@ -12,10 +12,10 @@ resource "aws_cloudwatch_metric_alarm" "rds_cpu_high" {
   threshold = 80
 
   dimensions = {
-    DBInstanceIdentifier = var.db_identifier
+    InstanceId = var.postgres_instance_id
   }
 
-  alarm_description = "RDS CPU above 80%"
+  alarm_description = "PostgreSQL VM CPU above 80%"
 }
 
 resource "aws_cloudwatch_metric_alarm" "eks_cpu_high" {

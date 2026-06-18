@@ -1,5 +1,5 @@
-output "rds_alarm_name" {
-  value = aws_cloudwatch_metric_alarm.rds_cpu_high.alarm_name
+output "postgres_vm_alarm_name" {
+  value = aws_cloudwatch_metric_alarm.postgres_vm_cpu_high.alarm_name
 }
 
 output "eks_cpu_alarm_name" {
