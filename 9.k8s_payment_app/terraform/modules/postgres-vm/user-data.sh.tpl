@@ -2,7 +2,7 @@
 
 dnf update -y
 
-dnf install -y postgresql15-server postgresql15
+dnf install -y postgresql15-server postgresql15 cronie
 
 postgresql-setup --initdb
 
@@ -25,7 +25,15 @@ sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" \
 echo "host all all 10.0.0.0/16 md5" \
 >> /var/lib/pgsql/data/pg_hba.conf
 
+sed -i 's/^host\s\+all\s\+all\s\+127\.0\.0\.1\/32\s\+ident/host all all 127.0.0.1\/32 md5/' \
+/var/lib/pgsql/data/pg_hba.conf
+
+sed -i 's/^host\s\+all\s\+all\s\+::1\/128\s\+ident/host all all ::1\/128 md5/' \
+/var/lib/pgsql/data/pg_hba.conf
+
 systemctl restart postgresql
+
+mkdir -p /var/backups/postgresql
 
 cat > /usr/local/bin/db-backup.sh <<EOF
 #!/bin/bash
@@ -36,12 +44,21 @@ TIMESTAMP=\$(date +"%Y-%m-%d_%H-%M-%S")
 mkdir -p "\$BACKUP_DIR"
 
 PGPASSWORD='${postgres_password}' pg_dump \
-  -h localhost \
+  -h 127.0.0.1 \
   -U payments \
   -d payments \
   > "\$BACKUP_DIR/payments-\$TIMESTAMP.sql"
+
+find "\$BACKUP_DIR" -type f -mtime +7 -delete
 EOF
 
 chmod +x /usr/local/bin/db-backup.sh
 
-echo "0 2 * * * /usr/local/bin/db-backup.sh" | crontab -
+cat > /etc/cron.d/postgres-backup <<EOF
+0 2 * * * root /usr/local/bin/db-backup.sh
+EOF
+
+chmod 644 /etc/cron.d/postgres-backup
+
+systemctl enable crond
+systemctl start crond
