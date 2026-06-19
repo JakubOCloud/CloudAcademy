@@ -26,3 +26,22 @@ echo "host all all 10.0.0.0/16 md5" \
 >> /var/lib/pgsql/data/pg_hba.conf
 
 systemctl restart postgresql
+
+cat > /usr/local/bin/db-backup.sh <<EOF
+#!/bin/bash
+
+BACKUP_DIR="/var/backups/postgresql"
+TIMESTAMP=\$(date +"%Y-%m-%d_%H-%M-%S")
+
+mkdir -p "\$BACKUP_DIR"
+
+PGPASSWORD='${postgres_password}' pg_dump \
+  -h localhost \
+  -U payments \
+  -d payments \
+  > "\$BACKUP_DIR/payments-\$TIMESTAMP.sql"
+EOF
+
+chmod +x /usr/local/bin/db-backup.sh
+
+echo "0 2 * * * /usr/local/bin/db-backup.sh" | crontab -
