@@ -1,0 +1,3 @@
+---
+nginx_version: "1.28.3-2ubuntu1.6"
+nginx_port: 80
