@@ -11,12 +11,8 @@ systemctl start postgresql
 
 sudo -u postgres psql <<EOF
 CREATE USER payments WITH PASSWORD '${postgres_password}';
-
 CREATE DATABASE payments OWNER payments;
-
-GRANT ALL PRIVILEGES
-ON DATABASE payments
-TO payments;
+GRANT ALL PRIVILEGES ON DATABASE payments TO payments;
 EOF
 
 sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" \
