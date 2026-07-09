@@ -1,0 +1,106 @@
+---
+- name: Update apt cache
+  apt:
+    update_cache: yes
+  tags:
+    - install
+
+- name: Install NGINX
+  apt:
+    name: nginx
+    state: present
+  tags:
+    - install
+
+- name: Create www user
+  user:
+    name: "{{ www_user }}"
+    system: yes
+    shell: /usr/sbin/nologin
+  tags:
+    - install
+
+- name: Create web root directory
+  file:
+    path: "{{ web_root }}"
+    state: directory
+    owner: "{{ www_user }}"
+    group: "{{ www_user }}"
+    mode: '0755'
+  tags:
+    - install
+
+- name: Ensure NGINX is running
+  service:
+    name: nginx
+    state: started
+    enabled: yes
+  tags:
+    - run
+
+- name: Deploy main NGINX configuration
+  template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/sites-available/default
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart nginx
+  tags:
+    - config
+
+- name: Deploy replica configurations
+  template:
+    src: nginx.conf.j2
+    dest: "/etc/nginx/conf.d/replica{{ item }}.conf"
+    owner: root
+    group: root
+    mode: '0644'
+  loop: "{{ range(1, replica_count + 1) | list }}"
+  when: replica_count | int > 1
+  notify: Restart nginx
+  tags:
+    - config
+
+- name: Deploy versioned index page
+  template:
+    src: index.html.j2
+    dest: "{{ web_root }}/index.html"
+    owner: "{{ www_user }}"
+    group: "{{ www_user }}"
+    mode: '0644'
+
+  tags:
+    - deploy
+
+- name: Deploy htpasswd file
+  template:
+    src: htpasswd.j2
+    dest: /etc/nginx/.htpasswd
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart nginx
+  tags:
+    - security
+
+- name: Check if web server responds
+  uri:
+    url: "http://{{ ansible_host }}"
+    user: "{{ htpasswd_user }}"
+    password: "{{ htpasswd_password }}"
+    force_basic_auth: true
+    status_code: 200
+    return_content: true
+  register: webpage
+  tags:
+    - health
+
+- name: Verify release version is present
+  assert:
+    that:
+      - release_version in webpage.content
+    fail_msg: "Release version not found!"
+    success_msg: "Release version verified."
+  tags:
+    - health

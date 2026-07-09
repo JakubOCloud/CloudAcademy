@@ -1,0 +1,18 @@
+---
+nginx_version: "1.25.3"
+
+www_user: "www"
+
+web_root: "/var/www/html"
+
+http_port: 80
+
+server_name: "_"
+
+access_log: "/var/log/nginx/access.log"
+
+error_log: "/var/log/nginx/error.log"
+
+release_version: "1.0.2"
+
+replica_count: 3
