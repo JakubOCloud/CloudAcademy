@@ -29,6 +29,17 @@ def load_data(file_path):
 
     return df
 
+def detect_anomalies(df):
+
+    grouped = df.groupby(["service", "environment"])
+
+    for (service, environment), group in grouped:
+
+        print("=" * 50)
+        print(f"Service: {service}")
+        print(f"Environment: {environment}")
+        print(group)
+
 def main():
     parser = argparse.ArgumentParser(
         description="Cloud Cost Anomaly Detector"
@@ -44,7 +55,7 @@ def main():
 
     df = load_data(args.input)
 
-    print(df.head())
+    detect_anomalies(df)
 
 if __name__ == "__main__":
     main()
