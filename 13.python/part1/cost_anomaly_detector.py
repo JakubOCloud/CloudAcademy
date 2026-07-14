@@ -29,6 +29,19 @@ def load_data(file_path):
 
     return df
 
+def classify(increase):
+
+    if increase >= 100:
+        return "CRITICAL"
+
+    elif increase >= 50:
+        return "WARNING"
+
+    elif increase >= 25:
+        return "INFO"
+
+    return None
+
 def detect_anomalies(df):
 
     grouped = df.groupby(["service", "environment"])
@@ -54,12 +67,17 @@ def detect_anomalies(df):
                 continue
 
             increase = ((row["cost"] - baseline) / baseline) * 100
+            severity = classify(increase)
 
+        if severity:
             print(
-                row["date"].date(),
-                row["cost"],
-                round(baseline, 2),
-                round(increase, 2)
+                f"[{severity}] "
+                f"{row['date'].date()} | "
+                f"service={service} | "
+                f"env={environment} | "
+                f"cost={row['cost']:.2f} | "
+                f"baseline={baseline:.2f} | "
+                f"increase={increase:.2f}%"
             )
 
 def main():
