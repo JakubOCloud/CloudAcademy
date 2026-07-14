@@ -34,11 +34,33 @@ def detect_anomalies(df):
     grouped = df.groupby(["service", "environment"])
 
     for (service, environment), group in grouped:
+        group = group.sort_values("date").copy()
+
+        group["baseline"] = (
+            group["cost"]
+            .rolling(window=3, min_periods=3)
+            .mean()
+            .shift(1)
+        )
 
         print("=" * 50)
         print(f"Service: {service}")
         print(f"Environment: {environment}")
-        print(group)
+        for index, row in group.iterrows():
+
+            baseline = row["baseline"]
+
+            if pd.isna(baseline):
+                continue
+
+            increase = ((row["cost"] - baseline) / baseline) * 100
+
+            print(
+                row["date"].date(),
+                row["cost"],
+                round(baseline, 2),
+                round(increase, 2)
+            )
 
 def main():
     parser = argparse.ArgumentParser(
