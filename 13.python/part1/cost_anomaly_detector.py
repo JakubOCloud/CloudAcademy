@@ -43,6 +43,7 @@ def classify(increase):
     return None
 
 def detect_anomalies(df):
+    anomalies = []
 
     grouped = df.groupby(["service", "environment"])
 
@@ -56,9 +57,6 @@ def detect_anomalies(df):
             .shift(1)
         )
 
-        print("=" * 50)
-        print(f"Service: {service}")
-        print(f"Environment: {environment}")
         for index, row in group.iterrows():
 
             baseline = row["baseline"]
@@ -70,15 +68,39 @@ def detect_anomalies(df):
             severity = classify(increase)
 
         if severity:
-            print(
-                f"[{severity}] "
-                f"{row['date'].date()} | "
-                f"service={service} | "
-                f"env={environment} | "
-                f"cost={row['cost']:.2f} | "
-                f"baseline={baseline:.2f} | "
-                f"increase={increase:.2f}%"
-            )
+
+            anomalies.append({
+                "date": row["date"].strftime("%Y-%m-%d"),
+                "service": service,
+                "environment": environment,
+                "actual_cost": round(row["cost"], 2),
+                "baseline_cost": round(baseline, 2),
+                "increase_percent": round(increase, 2),
+                "severity": severity,
+                "reason": "Cost exceeded anomaly threshold"
+            })
+    return anomalies
+
+def print_report(anomalies):
+
+    if not anomalies:
+        print("No anomalies detected.")
+        return
+
+    print("\nDetected anomalies:\n")
+
+    for anomaly in anomalies:
+
+        print(
+            f"[{anomaly['severity']}] "
+            f"{anomaly['date']} | "
+            f"service={anomaly['service']} | "
+            f"env={anomaly['environment']} | "
+            f"cost={anomaly['actual_cost']:.2f} | "
+            f"baseline={anomaly['baseline_cost']:.2f} | "
+            f"increase={anomaly['increase_percent']:.2f}% | "
+            f"reason={anomaly['reason']}"
+        )
 
 def main():
     parser = argparse.ArgumentParser(
@@ -95,7 +117,9 @@ def main():
 
     df = load_data(args.input)
 
-    detect_anomalies(df)
+    anomalies = detect_anomalies(df)
+
+    print_report(anomalies)
 
 if __name__ == "__main__":
     main()
