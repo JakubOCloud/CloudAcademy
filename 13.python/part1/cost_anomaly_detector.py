@@ -1,5 +1,6 @@
 import argparse
 import pandas as pd
+import json
 import os
 
 def load_data(file_path):
@@ -102,6 +103,53 @@ def print_report(anomalies):
             f"reason={anomaly['reason']}"
         )
 
+def export_json(anomalies):
+
+    os.makedirs("output", exist_ok=True)
+
+    with open("output/anomalies.json", "w") as file:
+        json.dump(anomalies, file, indent=4)
+
+    print("\nJSON report saved to output/anomalies.json")
+
+def print_summary(df, anomalies):
+
+    print("\nSummary")
+    print("-" * 40)
+
+    print(f"Records analyzed : {len(df)}")
+    print(f"Anomalies found  : {len(anomalies)}")
+
+    severity_count = {}
+
+    for anomaly in anomalies:
+
+        severity = anomaly["severity"]
+
+        severity_count[severity] = severity_count.get(severity, 0) + 1
+
+    print("\nAnomalies by severity:")
+
+    for severity in ["INFO", "WARNING", "CRITICAL"]:
+
+        print(f"{severity:10}: {severity_count.get(severity, 0)}")
+
+    print("\nTop 3 anomalies:")
+
+    top3 = sorted(
+        anomalies,
+        key=lambda anomaly: anomaly["increase_percent"],
+        reverse=True
+    )[:3]
+
+    for anomaly in top3:
+
+        print(
+            f"{anomaly['service']} "
+            f"({anomaly['environment']}) - "
+            f"{anomaly['increase_percent']:.2f}%"
+        )
+
 def main():
     parser = argparse.ArgumentParser(
         description="Cloud Cost Anomaly Detector"
@@ -120,6 +168,8 @@ def main():
     anomalies = detect_anomalies(df)
 
     print_report(anomalies)
+    export_json(anomalies)
+    print_summary(df, anomalies)
 
 if __name__ == "__main__":
     main()
