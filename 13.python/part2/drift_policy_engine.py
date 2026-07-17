@@ -37,7 +37,6 @@ def validate_input(data: dict, name: str):
 
     required_sections = ["instances", "security_groups", "buckets"]
 
-    # policies mają inną strukturę
     if name == "Policies":
         return
 
@@ -47,6 +46,60 @@ def validate_input(data: dict, name: str):
 
         if not isinstance(data[section], list):
             raise ValueError(f"'{section}' must be a list.")
+        
+def detect_instance_drift(desired_instances, actual_instances):
+    """Compare desired and actual instances."""
+
+    findings = []
+
+    desired_map = {instance["name"]: instance for instance in desired_instances}
+    actual_map = {instance["name"]: instance for instance in actual_instances}
+
+    for name in desired_map:
+        if name not in actual_map:
+            findings.append(
+                Finding(
+                    finding_type="missing_resource",
+                    resource_type="instance",
+                    resource_name=name,
+                    severity="HIGH",
+                    reason="Instance missing from actual state."
+                )
+            )
+
+    for name in actual_map:
+        if name not in desired_map:
+            findings.append(
+                Finding(
+                    finding_type="unexpected_resource",
+                    resource_type="instance",
+                    resource_name=name,
+                    severity="LOW",
+                    reason="Unexpected instance found."
+                )
+            )
+
+    for name in desired_map:
+        if name in actual_map:
+
+            desired_instance = desired_map[name]
+            actual_instance = actual_map[name]
+
+            if desired_instance["type"] != actual_instance["type"]:
+
+                findings.append(
+                    Finding(
+                        finding_type="changed_resource",
+                        resource_type="instance",
+                        resource_name=name,
+                        severity="HIGH",
+                        reason="Instance type drift detected.",
+                        expected=desired_instance["type"],
+                        actual=actual_instance["type"]
+                    )
+                )
+
+    return findings
 
 def main():
     parser = argparse.ArgumentParser(description="Drift & Policy Engine")
@@ -76,6 +129,16 @@ def main():
 
         print("\nPolicies loaded:")
         print(policies)
+
+        instance_findings = detect_instance_drift(
+        desired["instances"],
+        actual["instances"]
+        )
+
+        print("\nInstance Drift Findings:\n")
+
+        for finding in instance_findings:
+            print(finding)
 
     except Exception as e:
         print(f"Error: {e}")
