@@ -1,0 +1,43 @@
+{
+  "instances": [
+    {
+      "name": "app-prod-1",
+      "type": "t3.large",
+      "tags": {
+        "Owner": "platform",
+        "Environment": "prod"
+      }
+    },
+    {
+      "name": "app-prod-2",
+      "type": "t3.medium",
+      "tags": {
+        "Environment": "prod"
+      }
+    },
+    {
+      "name": "debug-box",
+      "type": "t3.micro",
+      "tags": {
+        "Owner": "admin"
+      }
+    }
+  ],
+  "security_groups": [
+    {
+      "name": "app-sg",
+      "ingress": [
+        {
+          "port": 22,
+          "cidr": "0.0.0.0/0"
+        }
+      ]
+    }
+  ],
+  "buckets": [
+    {
+      "name": "prod-artifacts",
+      "encryption": false
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "instances": [
+    {
+      "name": "app-prod-1",
+      "type": "t3.medium",
+      "tags": {
+        "Owner": "platform",
+        "Environment": "prod"
+      }
+    },
+    {
+      "name": "app-prod-2",
+      "type": "t3.medium",
+      "tags": {
+        "Owner": "platform",
+        "Environment": "prod"
+      }
+    }
+  ],
+  "security_groups": [
+    {
+      "name": "app-sg",
+      "ingress": [
+        {
+          "port": 443,
+          "cidr": "10.0.0.0/16"
+        }
+      ]
+    }
+  ],
+  "buckets": [
+    {
+      "name": "prod-artifacts",
+      "encryption": true
+    }
+  ]
+}
