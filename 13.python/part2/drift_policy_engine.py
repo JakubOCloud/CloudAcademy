@@ -209,6 +209,140 @@ def detect_bucket_drift(desired_buckets, actual_buckets):
 
     return findings
 
+def check_bucket_encryption(actual_buckets):
+    findings = []
+
+    for bucket in actual_buckets:
+
+        if not bucket["encryption"]:
+
+            findings.append(
+                Finding(
+                    finding_type="policy_violation",
+                    resource_type="bucket",
+                    resource_name=bucket["name"],
+                    severity="HIGH",
+                    reason="Bucket encryption is disabled.",
+                    expected="True",
+                    actual="False"
+                )
+            )
+
+    return findings
+
+def check_required_tags(instances, required_tags):
+
+    findings = []
+
+    for instance in instances:
+
+        tags = instance.get("tags", {})
+
+        for tag in required_tags:
+
+            if tag not in tags:
+
+                findings.append(
+                    Finding(
+                        finding_type="policy_violation",
+                        resource_type="instance",
+                        resource_name=instance["name"],
+                        severity="MEDIUM",
+                        reason=f"Missing required tag: {tag}",
+                        expected=tag,
+                        actual="Missing"
+                    )
+                )
+
+    return findings
+
+def check_public_ssh(actual_security_groups):
+    findings = []
+
+    for sg in actual_security_groups:
+
+        for rule in sg["ingress"]:
+
+            if rule["port"] == 22 and rule["cidr"] == "0.0.0.0/0":
+
+                findings.append(
+                    Finding(
+                        finding_type="policy_violation",
+                        resource_type="security_group",
+                        resource_name=sg["name"],
+                        severity="CRITICAL",
+                        reason="Public SSH access detected.",
+                        expected="Internal network only",
+                        actual="0.0.0.0/0"
+                    )
+                )
+
+    return findings
+
+def check_allowed_instance_types(instances, allowed_types):
+
+    findings = []
+
+    for instance in instances:
+
+        tags = instance.get("tags", {})
+
+        if tags.get("Environment") == "prod":
+
+            if instance["type"] not in allowed_types:
+
+                findings.append(
+                    Finding(
+                        finding_type="policy_violation",
+                        resource_type="instance",
+                        resource_name=instance["name"],
+                        severity="HIGH",
+                        reason="Instance type is not allowed in production.",
+                        expected=str(allowed_types),
+                        actual=instance["type"]
+                    )
+                )
+
+    return findings
+
+def validate_policies(actual, policies):
+
+    findings = []
+
+    for rule in policies["rules"]:
+
+        if rule["type"] == "bucket_encryption_required":
+
+            findings.extend(
+                check_bucket_encryption(actual["buckets"])
+            )
+
+        elif rule["type"] == "deny_public_ssh":
+
+            findings.extend(
+                check_public_ssh(actual["security_groups"])
+            )
+
+        elif rule["type"] == "required_tags":
+
+            findings.extend(
+                check_required_tags(
+                    actual["instances"],
+                    rule["tags"]
+                )
+            )
+
+        elif rule["type"] == "allowed_instance_types_prod":
+
+            findings.extend(
+                check_allowed_instance_types(
+                    actual["instances"],
+                    rule["allowed"]
+                )
+            )
+
+    return findings
+
 def main():
     parser = argparse.ArgumentParser(description="Drift & Policy Engine")
 
@@ -258,6 +392,13 @@ def main():
             sg_findings +
             bucket_findings
         )
+
+        policy_findings = validate_policies(actual, policies)
+
+        print("\n===== POLICY VIOLATIONS =====\n")
+
+        for finding in policy_findings:
+            print(finding)
 
         print("\n===== DRIFT FINDINGS =====\n")
 
