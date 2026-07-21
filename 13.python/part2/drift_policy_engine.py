@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 from dataclasses import dataclass, asdict
 from typing import List
-
+from collections import Counter
 
 @dataclass
 class Finding:
@@ -353,6 +353,73 @@ def export_findings(findings, filename="findings_report.json"):
             indent=4
         )
 
+def print_report(drift_findings, policy_findings, desired, actual):
+
+    all_findings = drift_findings + policy_findings
+
+    total_resources = (
+        len(actual["instances"]) +
+        len(actual["security_groups"]) +
+        len(actual["buckets"])
+    )
+
+    severity_count = Counter(
+        finding.severity for finding in all_findings
+    )
+
+    print("\n" + "=" * 50)
+    print(" Drift & Policy Compliance Report")
+    print("=" * 50)
+
+    print(f"\nResources analyzed : {total_resources}")
+    print(f"Drift findings     : {len(drift_findings)}")
+    print(f"Policy violations  : {len(policy_findings)}")
+
+    print("\nSeverity Breakdown")
+
+    for severity in ["LOW", "MEDIUM", "HIGH", "CRITICAL"]:
+        print(f"{severity:<10}: {severity_count.get(severity,0)}")
+
+    print("\nDetailed Findings")
+    print("-" * 50)
+
+    for finding in all_findings:
+
+        print(f"[{finding.severity}] {finding.finding_type}")
+        print(f"Resource Type : {finding.resource_type}")
+        print(f"Resource Name : {finding.resource_name}")
+        print(f"Reason        : {finding.reason}")
+
+        if finding.expected:
+            print(f"Expected      : {finding.expected}")
+
+        if finding.actual:
+            print(f"Actual        : {finding.actual}")
+
+        print("-" * 50)
+
+    print("\nSummary")
+
+    print(f"Total Findings     : {len(all_findings)}")
+    print(f"Drift Findings     : {len(drift_findings)}")
+    print(f"Policy Violations  : {len(policy_findings)}")
+
+    print("\nTop Critical Issues")
+
+    critical = [
+        finding
+        for finding in all_findings
+        if finding.severity == "CRITICAL"
+    ]
+
+    if critical:
+
+        for finding in critical:
+            print(f"- {finding.reason} ({finding.resource_name})")
+
+    else:
+        print("None")
+
 def main():
     parser = argparse.ArgumentParser(description="Drift & Policy Engine")
 
@@ -409,15 +476,12 @@ def main():
 
         export_findings(all_findings)
 
-        print("\n===== POLICY VIOLATIONS =====\n")
-
-        for finding in policy_findings:
-            print(finding)
-
-        print("\n===== DRIFT FINDINGS =====\n")
-
-        for finding in drift_findings:
-            print(finding)
+        print_report(
+            drift_findings,
+            policy_findings,
+            desired,
+            actual
+        )
 
     except Exception as e:
         print(f"Error: {e}")
