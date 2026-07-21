@@ -1,6 +1,5 @@
 import argparse
 import json
-from pathlib import Path
 from dataclasses import dataclass, asdict
 from typing import List
 from collections import Counter
@@ -38,6 +37,13 @@ def validate_input(data: dict, name: str):
     required_sections = ["instances", "security_groups", "buckets"]
 
     if name == "Policies":
+
+        if "rules" not in data:
+            raise ValueError("Policies must contain 'rules'.")
+
+        if not isinstance(data["rules"], list):
+            raise ValueError("'rules' must be a list.")
+
         return
 
     for section in required_sections:
@@ -353,7 +359,7 @@ def export_findings(findings, filename="findings_report.json"):
             indent=4
         )
 
-def print_report(drift_findings, policy_findings, desired, actual):
+def print_report(drift_findings, policy_findings, actual):
 
     all_findings = drift_findings + policy_findings
 
@@ -440,15 +446,6 @@ def main():
 
         print("All input files validated successfully.")
 
-        print("\nDesired resources loaded:")
-        print(desired)
-
-        print("\nActual resources loaded:")
-        print(actual)
-
-        print("\nPolicies loaded:")
-        print(policies)
-
         instance_findings = detect_instance_drift(
             desired["instances"],
             actual["instances"]
@@ -479,7 +476,6 @@ def main():
         print_report(
             drift_findings,
             policy_findings,
-            desired,
             actual
         )
 
