@@ -1,0 +1,74 @@
+[
+    {
+        "finding_type": "unexpected_resource",
+        "resource_type": "instance",
+        "resource_name": "debug-box",
+        "severity": "LOW",
+        "reason": "Unexpected instance found.",
+        "expected": "",
+        "actual": ""
+    },
+    {
+        "finding_type": "changed_resource",
+        "resource_type": "instance",
+        "resource_name": "app-prod-1",
+        "severity": "HIGH",
+        "reason": "Instance type drift detected.",
+        "expected": "t3.medium",
+        "actual": "t3.large"
+    },
+    {
+        "finding_type": "changed_resource",
+        "resource_type": "security_group",
+        "resource_name": "app-sg",
+        "severity": "HIGH",
+        "reason": "Ingress rules changed.",
+        "expected": "[{'port': 443, 'cidr': '10.0.0.0/16'}]",
+        "actual": "[{'port': 22, 'cidr': '0.0.0.0/0'}]"
+    },
+    {
+        "finding_type": "changed_resource",
+        "resource_type": "bucket",
+        "resource_name": "prod-artifacts",
+        "severity": "HIGH",
+        "reason": "Bucket encryption drift detected.",
+        "expected": "True",
+        "actual": "False"
+    },
+    {
+        "finding_type": "policy_violation",
+        "resource_type": "bucket",
+        "resource_name": "prod-artifacts",
+        "severity": "HIGH",
+        "reason": "Bucket encryption is disabled.",
+        "expected": "True",
+        "actual": "False"
+    },
+    {
+        "finding_type": "policy_violation",
+        "resource_type": "security_group",
+        "resource_name": "app-sg",
+        "severity": "CRITICAL",
+        "reason": "Public SSH access detected.",
+        "expected": "Internal network only",
+        "actual": "0.0.0.0/0"
+    },
+    {
+        "finding_type": "policy_violation",
+        "resource_type": "instance",
+        "resource_name": "app-prod-2",
+        "severity": "MEDIUM",
+        "reason": "Missing required tag: Owner",
+        "expected": "Owner",
+        "actual": "Missing"
+    },
+    {
+        "finding_type": "policy_violation",
+        "resource_type": "instance",
+        "resource_name": "debug-box",
+        "severity": "MEDIUM",
+        "reason": "Missing required tag: Environment",
+        "expected": "Environment",
+        "actual": "Missing"
+    }
+]

@@ -343,6 +343,16 @@ def validate_policies(actual, policies):
 
     return findings
 
+def export_findings(findings, filename="findings_report.json"):
+    """Export findings to JSON file."""
+
+    with open(filename, "w") as file:
+        json.dump(
+            [asdict(finding) for finding in findings],
+            file,
+            indent=4
+        )
+
 def main():
     parser = argparse.ArgumentParser(description="Drift & Policy Engine")
 
@@ -394,6 +404,10 @@ def main():
         )
 
         policy_findings = validate_policies(actual, policies)
+
+        all_findings = drift_findings + policy_findings
+
+        export_findings(all_findings)
 
         print("\n===== POLICY VIOLATIONS =====\n")
 
