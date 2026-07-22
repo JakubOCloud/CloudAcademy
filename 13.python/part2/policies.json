@@ -1,0 +1,24 @@
+{
+  "rules": [
+    {
+      "type": "bucket_encryption_required"
+    },
+    {
+      "type": "deny_public_ssh"
+    },
+    {
+      "type": "required_tags",
+      "tags": [
+        "Owner",
+        "Environment"
+      ]
+    },
+    {
+      "type": "allowed_instance_types_prod",
+      "allowed": [
+        "t3.medium",
+        "t3.large"
+      ]
+    }
+  ]
+}
