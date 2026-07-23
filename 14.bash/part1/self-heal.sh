@@ -2,11 +2,15 @@
 
 set -euo pipefail
 
+# Defaults
+
 SERVICE=""
 PORT=""
 HEALTH=""
 MODE=""
 WAIT_TIME=10
+
+# Log
 
 log_info() {
     echo "[INFO] $1"
@@ -19,6 +23,8 @@ log_warn() {
 log_error() {
     echo "[ERROR] $1"
 }
+
+# Usage
 
 usage() {
 
@@ -45,3 +51,43 @@ Example:
 EOF
 
 }
+
+# Parse arguments
+
+while [[ $# -gt 0 ]]
+do
+    case "$1" in
+
+        --service)
+            SERVICE="$2"
+            shift 2
+            ;;
+
+        --port)
+            PORT="$2"
+            shift 2
+            ;;
+
+        --health-url)
+            HEALTH_URL="$2"
+            shift 2
+            ;;
+
+        --mode)
+            MODE="$2"
+            shift 2
+            ;;
+
+        --wait)
+            WAIT_TIME="$2"
+            shift 2
+            ;;
+
+        *)
+            log_error "Unknown argument: $1"
+            usage
+            exit 2
+            ;;
+
+    esac
+done
