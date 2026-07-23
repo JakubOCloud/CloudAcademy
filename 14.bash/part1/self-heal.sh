@@ -19,3 +19,29 @@ log_warn() {
 log_error() {
     echo "[ERROR] $1"
 }
+
+usage() {
+
+cat <<EOF
+
+Usage:
+
+./self-heal.sh \
+  --service <service> \
+  --port <port> \
+  --health-url <url> \
+  --mode <check|heal|diagnose> \
+  [--wait seconds]
+
+Example:
+
+./self-heal.sh \
+  --service payment-api \
+  --port 8080 \
+  --health-url http://localhost:8080/health \
+  --mode heal
+  --wait 10
+
+EOF
+
+}
