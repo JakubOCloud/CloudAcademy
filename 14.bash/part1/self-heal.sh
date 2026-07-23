@@ -91,3 +91,18 @@ do
 
     esac
 done
+
+# Validate arguments
+
+if [[ -z "$SERVICE" ||
+      -z "$PORT" ||
+      -z "$HEALTH_URL" ||
+      -z "$MODE" ]]
+then
+
+    log_error "Missing required arguments"
+
+    usage
+
+    exit 2
+fi
