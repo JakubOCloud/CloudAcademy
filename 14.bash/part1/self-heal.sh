@@ -293,6 +293,14 @@ perform_heal() {
 
 }
 
+# Diagnose mode
+
+perform_diagnose() {
+
+    collect_diagnostics "Manual diagnostic collection"
+
+}
+
 check_dependencies
 
 case "$MODE" in
