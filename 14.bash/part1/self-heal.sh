@@ -200,6 +200,99 @@ perform_check() {
     return 0
 }
 
+# Restart service
+
+restart_service() {
+
+    log_info "Restarting service: $SERVICE"
+
+    systemctl restart "$SERVICE"
+
+    log_info "Waiting $WAIT_TIME seconds..."
+
+    sleep "$WAIT_TIME"
+}
+
+# Collect diagnostics
+
+collect_diagnostics() {
+
+    mkdir -p reports
+
+    TIMESTAMP=$(date +"%Y-%m-%d-%H-%M-%S")
+
+    REPORT="reports/${SERVICE}-${TIMESTAMP}.log"
+
+    {
+
+        echo "========== SELF HEAL REPORT =========="
+        echo
+
+        echo "Timestamp:"
+        date
+
+        echo
+        echo "Service:"
+        echo "$SERVICE"
+
+        echo
+        echo "Actions:"
+        echo "$1"
+
+        echo
+        echo "========== SYSTEMCTL STATUS =========="
+        systemctl status "$SERVICE"
+
+        echo
+        echo "========== JOURNAL =========="
+        journalctl -u "$SERVICE" -n 30 --no-pager
+
+        echo
+        echo "========== PORT =========="
+        ss -ltn
+
+        echo
+        echo "========== HEALTH =========="
+        curl -s "$HEALTH_URL"
+
+    } > "$REPORT"
+
+    log_info "Diagnostic report saved to $REPORT"
+
+}
+
+# Heal mode
+
+perform_heal() {
+
+    if perform_check; then
+
+        log_info "Service is already healthy"
+
+        return 0
+
+    fi
+
+    log_warn "Problem detected"
+
+    restart_service
+
+    if perform_check; then
+
+        log_info "Service successfully recovered"
+
+        return 0
+
+    fi
+
+    log_error "Recovery failed"
+
+    collect_diagnostics "Recovery failed after restart"
+
+    return 1
+
+}
+
 check_dependencies
 
 case "$MODE" in
