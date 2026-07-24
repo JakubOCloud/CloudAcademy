@@ -140,4 +140,85 @@ check_dependencies() {
 
 }
 
+# Service check
+
+check_service() {
+
+    log_info "Checking service: $SERVICE"
+
+    if systemctl is-active --quiet "$SERVICE"; then
+        log_info "Service is active"
+        return 0
+    else
+        log_error "Service is not active"
+        return 1
+    fi
+}
+
+# Port check
+
+check_port() {
+
+    log_info "Checking port: $PORT"
+
+    if ss -ltn | grep -q ":$PORT "; then
+        log_info "Port $PORT is listening"
+        return 0
+    else
+        log_error "Port $PORT is not listening"
+        return 1
+    fi
+}
+
+# Health check
+
+check_health() {
+
+    log_info "Checking health endpoint"
+
+    response=$(curl -s --max-time 5 "$HEALTH_URL")
+
+    if echo "$response" | grep -q '"status":"UP"'; then
+        log_info "Health endpoint is healthy"
+        return 0
+    else
+        log_error "Health endpoint is unhealthy"
+        return 1
+    fi
+}
+
+# Check mode
+
+perform_check() {
+
+    check_service || return 1
+    check_port || return 1
+    check_health || return 1
+
+    log_info "Service is healthy"
+
+    return 0
+}
+
 check_dependencies
+
+case "$MODE" in
+
+    check)
+
+        if perform_check; then
+            exit 0
+        else
+            exit 1
+        fi
+        ;;
+
+    heal)
+        log_info "Heal mode not implemented yet"
+        ;;
+
+    diagnose)
+        log_info "Diagnose mode not implemented yet"
+        ;;
+
+esac
