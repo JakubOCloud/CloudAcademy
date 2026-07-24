@@ -106,3 +106,38 @@ then
 
     exit 2
 fi
+
+# Check mode
+
+case "$MODE" in
+    check|heal|diagnose)
+        ;;
+    *)
+        log_error "Invalid mode: $MODE"
+        usage
+        exit 2
+        ;;
+esac
+
+# Checking dependencies
+
+check_dependencies() {
+
+    local tools=(
+        systemctl
+        curl
+        ss
+    )
+
+    for tool in "${tools[@]}"
+    do
+        if ! command -v "$tool" >/dev/null 2>&1
+        then
+            log_error "$tool is not installed"
+            exit 2
+        fi
+    done
+
+}
+
+check_dependencies
