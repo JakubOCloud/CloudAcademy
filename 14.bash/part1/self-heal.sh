@@ -206,7 +206,12 @@ restart_service() {
 
     log_info "Restarting service: $SERVICE"
 
-    systemctl restart "$SERVICE"
+    if sudo systemctl restart "$SERVICE"; then
+        log_info "Service restarted successfully"
+    else
+        log_error "Failed to restart service"
+        return 1
+    fi
 
     log_info "Waiting $WAIT_TIME seconds..."
 
@@ -241,11 +246,11 @@ collect_diagnostics() {
 
         echo
         echo "========== SYSTEMCTL STATUS =========="
-        systemctl status "$SERVICE"
+        sudo systemctl status "$SERVICE"
 
         echo
         echo "========== JOURNAL =========="
-        journalctl -u "$SERVICE" -n 30 --no-pager
+        sudo journalctl -u "$SERVICE" -n 30 --no-pager
 
         echo
         echo "========== PORT =========="
@@ -275,7 +280,11 @@ perform_heal() {
 
     log_warn "Problem detected"
 
-    restart_service
+    if ! restart_service; then
+        collect_diagnostics "Failed to restart service"
+        return 1
+    fi
+
 
     if perform_check; then
 
@@ -315,11 +324,20 @@ case "$MODE" in
         ;;
 
     heal)
-        log_info "Heal mode not implemented yet"
+
+        if perform_heal; then
+            exit 0
+        else
+            exit 1
+        fi
         ;;
 
     diagnose)
-        log_info "Diagnose mode not implemented yet"
-        ;;
+
+        perform_diagnose
+
+        exit 0
+
+    ;;
 
 esac
