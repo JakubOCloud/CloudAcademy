@@ -114,3 +114,55 @@ sudo rm -rf /etc/systemd/system/payment-api.service.d
 sudo systemctl daemon-reload
 sudo rm -rf /opt/payment-api-lab
 ```
+
+
+# Answers to questions
+
+## 1. What failure scenarios can your script detect, and which ones remain outside its scope?
+
+**Detects:**
+- service stopped,
+- wrong port,
+- unhealthy or unavailable health endpoint.
+
+**Outside scope:**
+- high CPU/RAM usage,
+- database or external service failures,
+- disk space and network issues.
+
+## 2. Why is checking only `systemctl is-active` not enough to determine service health?
+
+Because a service can be running but:
+- not listening on the correct port,
+- returning HTTP 500,
+- not responding correctly.
+
+## 3. What are the risks of automatic restart-based recovery?
+
+- restart loops,
+- temporary downtime,
+- hiding the real problem.
+
+## 4. What additional diagnostics would you collect in a production environment?
+
+- CPU and memory usage,
+- disk usage,
+- process list,
+- network connections,
+- application logs.
+
+## 5. How would you extend this tool to support multiple services?
+
+- read services from a config file,
+- check each service in a loop,
+- generate separate reports.
+
+## 6. How could this script be integrated into monitoring or alerting workflows?
+
+It can be triggered by monitoring tool like Prometheus and send alerts if recovery fails.
+
+## 7. What safeguards would you add to avoid restart loops or harmful self-healing behavior?
+
+- limit restart attempts,
+- add a cooldown time,
+- notify an administrator after repeated failures.

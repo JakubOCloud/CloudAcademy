@@ -176,13 +176,18 @@ check_health() {
 
     log_info "Checking health endpoint"
 
-    response=$(curl -s --max-time 5 "$HEALTH_URL")
+    http_code=$(curl -s -o /tmp/health.out -w "%{http_code}" --max-time 5 "$HEALTH_URL")
 
-    if echo "$response" | grep -q '"status":"UP"'; then
+    if [[ "$http_code" != "200" ]]; then
+        log_error "Health endpoint returned HTTP $http_code"
+        return 1
+    fi
+
+    if grep -q '"status":"UP"' /tmp/health.out; then
         log_info "Health endpoint is healthy"
         return 0
     else
-        log_error "Health endpoint is unhealthy"
+        log_error "Health endpoint returned unhealthy status"
         return 1
     fi
 }
@@ -254,7 +259,7 @@ collect_diagnostics() {
 
         echo
         echo "========== PORT =========="
-        ss -ltn
+        ss -ltn | grep ":$PORT"
 
         echo
         echo "========== HEALTH =========="
