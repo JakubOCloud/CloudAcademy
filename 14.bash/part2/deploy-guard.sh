@@ -47,14 +47,6 @@ if [[ -z "$SERVICE" || -z "$VERSION" || -z "$HEALTH_URL" || -z "$DELAY" ]]; then
     exit 2
 fi
 
-# test
-
-echo "Service: $SERVICE"
-echo "Version: $VERSION"
-echo "Health URL: $HEALTH_URL"
-echo "Delay: $DELAY"
-echo "Retries: $MAX_RETRIES"
-
 # Logs
 
 log_info() {
@@ -101,8 +93,51 @@ health_check() {
     return 1
 }
 
-if health_check; then
-    log_info "Health check passed"
-else
-    log_error "Health check failed"
-fi
+# Rollback
+
+rollback() {
+
+    log_warning "Rolling back deployment"
+
+    bash stop_service.sh
+
+    bash start_service.sh "$ROLLBACK_VERSION"
+
+    echo "$ROLLBACK_VERSION" > state/current_version
+
+    for instance in state/instances/*.version; do
+        echo "$ROLLBACK_VERSION" > "$instance"
+    done
+
+    log_info "Rollback successful"
+
+    exit 1
+}
+
+for instance in state/instances/*.version; do
+
+    log_info "Deploying to $(basename "$instance" .version)"
+
+    echo "$VERSION" > "$instance"
+
+    bash stop_service.sh
+    bash start_service.sh "$VERSION"
+
+    log_info "Waiting $DELAY seconds"
+
+    sleep "$DELAY"
+
+    if health_check; then
+        log_info "Health check passed"
+    else
+        log_error "Health check failed"
+        rollback
+    fi
+
+done
+
+echo "$VERSION" > state/current_version
+
+log_info "Deployment completed successfully"
+
+exit 0
