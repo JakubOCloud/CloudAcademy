@@ -1,0 +1,35 @@
+replicaCount: 1
+
+image:
+  repository: busybox
+  tag: stable
+  pullPolicy: IfNotPresent
+
+namespace: spring-api
+
+service:
+  type: ClusterIP
+
+ports:
+  api: 8080
+  logs: 8081
+  soap: 8082
+
+profile: dev
+
+ingress:
+  enabled: true
+  className: nginx
+  host: localhost
+
+resources:
+  requests:
+    cpu: "100m"
+    memory: "128Mi"
+  limits:
+    cpu: "500m"
+    memory: "512Mi"
+
+config:
+  app: Spring Boot API
+  version: "1.0"
