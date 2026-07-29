@@ -33,7 +33,8 @@ while [[ $# -gt 0 ]]; do
             shift 2
             ;;
         *)
-            echo "Unknown argument: $1"
+            log_error "Unknown argument: $1"
+            echo "bash deploy-guard.sh --service NAME --version VERSION --health-url URL --delay SECONDS [--retries N]"
             exit 2
             ;;
     esac
