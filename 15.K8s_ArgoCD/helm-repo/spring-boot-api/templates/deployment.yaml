@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "spring-boot-api.fullname" . }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "spring-boot-api.labels" . | nindent 4 }}
+
+spec:
+  replicas: {{ .Values.replicaCount }}
+
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+
+  selector:
+    matchLabels:
+      app: {{ include "spring-boot-api.name" . }}
+
+  template:
+    metadata:
+      labels:
+        app: {{ include "spring-boot-api.name" . }}
+
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+
+    spec:
+      containers:
+        - name: spring-boot-api
+
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+
+          args:
+            - "--spring.profiles.active={{ .Values.profile }}"
+
+          env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+
+          envFrom:
+            - secretRef:
+                name: {{ include "spring-boot-api.fullname" . }}-secret
+
+          ports:
+            - containerPort: {{ .Values.ports.api }}
+            - containerPort: {{ .Values.ports.logs }}
+            - containerPort: {{ .Values.ports.soap }}
+
+          volumeMounts:
+            - name: app-config
+              mountPath: /app/config.json
+              subPath: config.json
+
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.ports.api }}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.ports.api }}
+            initialDelaySeconds: 5
+            periodSeconds: 5
+
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - wget
+                  - http://localhost:8080/service/shutdown
+
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+
+      volumes:
+        - name: app-config
+          configMap:
+            name: {{ include "spring-boot-api.fullname" . }}-config
