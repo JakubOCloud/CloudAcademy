@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "spring-boot-api.fullname" . }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "spring-boot-api.labels" . | nindent 4 }}
+
+spec:
+  type: {{ .Values.service.type }}
+
+  selector:
+    app: {{ include "spring-boot-api.name" . }}
+
+  ports:
+    - name: api
+      protocol: TCP
+      port: {{ .Values.ports.api }}
+      targetPort: {{ .Values.ports.api }}
+
+    - name: logs
+      protocol: TCP
+      port: {{ .Values.ports.logs }}
+      targetPort: {{ .Values.ports.logs }}
+
+    - name: soap
+      protocol: TCP
+      port: {{ .Values.ports.soap }}
+      targetPort: {{ .Values.ports.soap }}
