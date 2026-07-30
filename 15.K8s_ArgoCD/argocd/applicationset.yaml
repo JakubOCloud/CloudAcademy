@@ -1,0 +1,50 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: spring-boot-api
+  namespace: argocd
+
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: dev-global-cluster-0
+            environment: dev
+            namespace: spring-api
+
+          - cluster: prd-global-cluster-5
+            environment: prd
+            namespace: spring-api
+
+  template:
+    metadata:
+      name: "{{environment}}-spring-boot-api"
+
+    spec:
+      project: spring-api
+
+      destination:
+        name: "{{cluster}}"
+        namespace: "{{namespace}}"
+
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+
+        syncOptions:
+          - CreateNamespace=true
+
+      sources:
+
+        - repoURL: https://github.com/example/helm-repo.git
+          targetRevision: main
+          path: spring-boot-api
+
+          helm:
+            valueFiles:
+              - $values/{{environment}}/values.yaml
+
+        - repoURL: https://github.com/example/values-repo.git
+          targetRevision: main
+          ref: values
