@@ -34,8 +34,15 @@ spec:
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
 
+          command:
+            - sh
+            - -c
+
           args:
-            - "--spring.profiles.active={{ .Values.profile }}"
+            - |
+              echo "Starting with profile {{ .Values.profile }}"
+              echo "--spring.profiles.active={{ .Values.profile }}"
+              sleep infinity
 
           env:
             - name: POD_IP

@@ -1,0 +1,8 @@
+replicaCount: 3
+
+profile: dev
+
+ingress:
+  enabled: true
+  className: nginx
+  host: dev.spring.local
