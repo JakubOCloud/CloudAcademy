@@ -21,10 +21,10 @@ spec:
       name: "{{environment}}-spring-boot-api"
 
     spec:
-      project: spring-api
+      project: default
 
       destination:
-        name: "{{cluster}}"
+        server: https://kubernetes.default.svc
         namespace: "{{namespace}}"
 
       syncPolicy:
@@ -37,14 +37,14 @@ spec:
 
       sources:
 
-        - repoURL: https://github.com/example/helm-repo.git
-          targetRevision: main
-          path: spring-boot-api
+        - repoURL: https://github.com/JakubOCloud/CloudAcademy.git
+          targetRevision: K8s_ArgoCD
+          path: 15.K8s_ArgoCD/helm-repo/spring-boot-api
 
           helm:
             valueFiles:
-              - $values/{{environment}}/values.yaml
+              - $values/15.K8s_ArgoCD/values-repo/{{environment}}/values.yaml
 
-        - repoURL: https://github.com/example/values-repo.git
-          targetRevision: main
+        - repoURL: https://github.com/JakubOCloud/CloudAcademy.git
+          targetRevision: K8s_ArgoCD
           ref: values
