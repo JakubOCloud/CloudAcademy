@@ -33,3 +33,6 @@ resources:
 config:
   app: Spring Boot API
   version: "1.0"
+
+startup:
+  webRoot: /www

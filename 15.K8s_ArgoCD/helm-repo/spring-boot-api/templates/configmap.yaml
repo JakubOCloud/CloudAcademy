@@ -7,9 +7,29 @@ metadata:
     {{- include "spring-boot-api.labels" . | nindent 4 }}
 
 data:
+
   config.json: |
     {
       "application": "{{ .Values.config.app }}",
       "version": "{{ .Values.config.version }}",
       "profile": "{{ .Values.profile }}"
     }
+
+  startup.sh: |
+    #!/bin/sh
+
+    echo "======================================"
+    echo "Starting Spring Boot API simulation"
+    echo "Profile: $SPRING_PROFILE"
+    echo "Simulated startup argument:"
+    echo "--spring.profiles.active=$SPRING_PROFILE"
+    echo "Pod IP : $POD_IP"
+    echo "======================================"
+
+    mkdir -p /www/service
+
+    echo "Spring Boot API" >/www/index.html
+
+    echo "Shutdown OK" >/www/service/shutdown
+
+    exec httpd -f -p 8080 -h /www

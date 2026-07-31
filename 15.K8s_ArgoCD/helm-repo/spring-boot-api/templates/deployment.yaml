@@ -36,13 +36,7 @@ spec:
 
           command:
             - sh
-            - -c
-
-          args:
-            - |
-              echo "Starting with profile {{ .Values.profile }}"
-              echo "--spring.profiles.active={{ .Values.profile }}"
-              sleep infinity
+            - /app/startup.sh
 
           env:
             - name: POD_IP
@@ -50,19 +44,26 @@ spec:
                 fieldRef:
                   fieldPath: status.podIP
 
+            - name: SPRING_PROFILE
+              value: "{{ .Values.profile }}"
+
           envFrom:
             - secretRef:
                 name: {{ include "spring-boot-api.fullname" . }}-secret
 
           ports:
-            - containerPort: {{ .Values.ports.api }}
-            - containerPort: {{ .Values.ports.logs }}
-            - containerPort: {{ .Values.ports.soap }}
+            - name: api
+              containerPort: {{ .Values.ports.api }}
+
+            - name: logs
+              containerPort: {{ .Values.ports.logs }}
+
+            - name: soap
+              containerPort: {{ .Values.ports.soap }}
 
           volumeMounts:
             - name: app-config
-              mountPath: /app/config.json
-              subPath: config.json
+              mountPath: /app
 
           livenessProbe:
             tcpSocket:
@@ -80,8 +81,9 @@ spec:
             preStop:
               exec:
                 command:
-                  - wget
-                  - http://localhost:8080/service/shutdown
+                  - sh
+                  - -c
+                  - wget -qO- http://localhost:8080/service/shutdown || true
 
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
@@ -90,3 +92,4 @@ spec:
         - name: app-config
           configMap:
             name: {{ include "spring-boot-api.fullname" . }}-config
+            defaultMode: 0755
