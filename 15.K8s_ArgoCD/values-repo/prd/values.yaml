@@ -1,0 +1,8 @@
+replicaCount: 5
+
+profile: prd
+
+ingress:
+  enabled: true
+  className: nginx
+  host: api.spring.local

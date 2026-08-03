@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "spring-boot-api.fullname" . }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    {{- include "spring-boot-api.labels" . | nindent 4 }}
+
+spec:
+  replicas: {{ .Values.replicaCount }}
+
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+
+  selector:
+    matchLabels:
+      app: {{ include "spring-boot-api.name" . }}
+
+  template:
+    metadata:
+      labels:
+        app: {{ include "spring-boot-api.name" . }}
+
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+
+    spec:
+      containers:
+        - name: spring-boot-api
+
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+
+          command:
+            - sh
+            - /app/startup.sh
+
+          env:
+            - name: POD_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+
+            - name: SPRING_PROFILE
+              value: "{{ .Values.profile }}"
+
+          envFrom:
+            - secretRef:
+                name: {{ include "spring-boot-api.fullname" . }}-secret
+
+          ports:
+            - name: api
+              containerPort: {{ .Values.ports.api }}
+
+            - name: logs
+              containerPort: {{ .Values.ports.logs }}
+
+            - name: soap
+              containerPort: {{ .Values.ports.soap }}
+
+          volumeMounts:
+            - name: app-config
+              mountPath: /app
+
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.ports.api }}
+            initialDelaySeconds: 10
+            periodSeconds: 10
+
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.ports.api }}
+            initialDelaySeconds: 5
+            periodSeconds: 5
+
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                  - sh
+                  - -c
+                  - wget -qO- http://localhost:8080/service/shutdown || true
+
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+
+      volumes:
+        - name: app-config
+          configMap:
+            name: {{ include "spring-boot-api.fullname" . }}-config
+            defaultMode: 0755

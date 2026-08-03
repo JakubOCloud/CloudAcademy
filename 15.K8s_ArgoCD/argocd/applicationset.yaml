@@ -1,0 +1,50 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: spring-boot-api
+  namespace: argocd
+
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: dev-global-cluster-0
+            environment: dev
+            namespace: spring-api
+
+          - cluster: prd-global-cluster-5
+            environment: prd
+            namespace: spring-api
+
+  template:
+    metadata:
+      name: "{{environment}}-spring-boot-api"
+
+    spec:
+      project: default
+
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: "{{namespace}}"
+
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+
+        syncOptions:
+          - CreateNamespace=true
+
+      sources:
+
+        - repoURL: https://github.com/JakubOCloud/CloudAcademy.git
+          targetRevision: K8s_ArgoCD
+          path: 15.K8s_ArgoCD/helm-repo/spring-boot-api
+
+          helm:
+            valueFiles:
+              - $values/15.K8s_ArgoCD/values-repo/{{environment}}/values.yaml
+
+        - repoURL: https://github.com/JakubOCloud/CloudAcademy.git
+          targetRevision: K8s_ArgoCD
+          ref: values
