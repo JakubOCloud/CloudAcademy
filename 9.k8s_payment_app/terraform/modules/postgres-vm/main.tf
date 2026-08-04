@@ -10,7 +10,7 @@ resource "aws_security_group" "postgres" {
     protocol    = "tcp"
 
     cidr_blocks = [
-      "10.0.0.0/16"
+      var.vpc_cidr
     ]
   }
 
@@ -63,7 +63,7 @@ data "aws_ami" "al2023" {
 
 resource "aws_instance" "postgres" {
   ami           = data.aws_ami.al2023.id
-  instance_type = "t3.small"
+  instance_type = var.instance_type
 
   subnet_id = var.private_subnet_id
 
