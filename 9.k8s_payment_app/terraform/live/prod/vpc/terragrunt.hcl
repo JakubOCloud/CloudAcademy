@@ -17,10 +17,8 @@ inputs = {
   vpc_cidr = local.env.locals.vpc_cidr
 
   availability_zones = local.env.locals.availability_zones
-
-  public_subnets = local.env.locals.public_subnets
+  public_subnets     = local.env.locals.public_subnets
 
   private_app_subnets = local.env.locals.private_app_subnets
-
-  private_db_subnets = local.env.locals.private_db_subnets
+  private_db_subnets  = local.env.locals.private_db_subnets
 }
