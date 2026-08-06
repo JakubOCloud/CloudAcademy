@@ -21,3 +21,7 @@ variable "private_app_subnets" {
 variable "private_db_subnets" {
   type = list(string)
 }
+
+variable "environment" {
+  type = string
+}

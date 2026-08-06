@@ -65,7 +65,7 @@ resource "aws_iam_role_policy_attachment" "cloudwatch" {
 }
 
 resource "aws_iam_role" "fluent_bit" {
-  name = "FluentBitCloudWatchRole"
+  name = "${var.cluster_name}-FluentBitCloudWatchRole"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
