@@ -5,3 +5,6 @@ values.txt
 terraform.tfstate
 trust-policy.json
 errored.tfstate
+.terragrunt-module-manifest
+.terragrunt-source-manifest
+.terragrunt-source-version

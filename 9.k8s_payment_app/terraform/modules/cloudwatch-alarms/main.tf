@@ -1,5 +1,5 @@
 resource "aws_cloudwatch_metric_alarm" "postgres_vm_cpu_high" {
-  alarm_name          = "finpay-postgres-vm-high-cpu"
+  alarm_name          = "${var.cluster_name}-postgres-vm-high-cpu"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 2
 
@@ -19,7 +19,7 @@ resource "aws_cloudwatch_metric_alarm" "postgres_vm_cpu_high" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "eks_cpu_high" {
-  alarm_name          = "finpay-eks-high-cpu"
+  alarm_name          = "${var.cluster_name}-eks-high-cpu"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 2
 
@@ -39,7 +39,7 @@ resource "aws_cloudwatch_metric_alarm" "eks_cpu_high" {
 }
 
 resource "aws_cloudwatch_metric_alarm" "eks_memory_high" {
-  alarm_name          = "finpay-eks-high-memory"
+  alarm_name          = "${var.cluster_name}-eks-high-memory"
   comparison_operator = "GreaterThanThreshold"
   evaluation_periods  = 2
 
