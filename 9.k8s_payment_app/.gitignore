@@ -8,3 +8,5 @@ errored.tfstate
 .terragrunt-module-manifest
 .terragrunt-source-manifest
 .terragrunt-source-version
+.terragrunt
+.terragrunt-cache
