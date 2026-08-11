@@ -35,8 +35,8 @@ locals {
 
   postgres_instance_type = "t3.micro"
 
-  eks_node_instance_type = "t3.small"
-  eks_desired_size       = 1
-  eks_min_size           = 1
-  eks_max_size           = 2
+  eks_node_instance_type = "t3.medium"
+  eks_desired_size       = 2
+  eks_min_size           = 2
+  eks_max_size           = 3
 }
