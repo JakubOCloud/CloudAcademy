@@ -1,5 +1,5 @@
 resource "aws_iam_role" "alb_controller" {
-  name = "AmazonEKSLoadBalancerControllerRole"
+  name = "${var.cluster_name}-alb-controller-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"

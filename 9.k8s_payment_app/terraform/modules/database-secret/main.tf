@@ -1,5 +1,5 @@
 resource "aws_secretsmanager_secret" "postgres" {
-  name                    = "${var.project_name}-postgres"
+  name                    = "${var.project_name}-${var.environment}-postgres"
   recovery_window_in_days = 0
 }
 

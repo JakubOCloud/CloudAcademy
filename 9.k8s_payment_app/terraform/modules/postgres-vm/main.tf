@@ -1,5 +1,5 @@
 resource "aws_security_group" "postgres" {
-  name        = "postgres-vm-sg"
+  name        = "${var.project_name}-${var.environment}-postgres-vm-sg"
   description = "PostgreSQL VM"
   vpc_id      = var.vpc_id
 
@@ -10,7 +10,7 @@ resource "aws_security_group" "postgres" {
     protocol    = "tcp"
 
     cidr_blocks = [
-      "10.0.0.0/16"
+      var.vpc_cidr
     ]
   }
 
@@ -26,7 +26,7 @@ resource "aws_security_group" "postgres" {
 }
 
 resource "aws_iam_role" "postgres_vm" {
-  name = "finpay-postgres-vm-role"
+  name = "${var.project_name}-${var.environment}-postgres-vm-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -46,7 +46,7 @@ resource "aws_iam_role_policy_attachment" "ssm" {
 }
 
 resource "aws_iam_instance_profile" "postgres_vm" {
-  name = "finpay-postgres-vm-profile"
+  name = "${var.project_name}-${var.environment}-postgres-vm-profile"
   role = aws_iam_role.postgres_vm.name
 }
 
@@ -63,7 +63,7 @@ data "aws_ami" "al2023" {
 
 resource "aws_instance" "postgres" {
   ami           = data.aws_ami.al2023.id
-  instance_type = "t3.small"
+  instance_type = var.instance_type
 
   subnet_id = var.private_subnet_id
 
@@ -86,7 +86,7 @@ resource "aws_instance" "postgres" {
   }
 
   tags = {
-    Name = "finpay-postgres"
+    Name = "${var.project_name}-${var.environment}-postgres"
   }
 }
 
