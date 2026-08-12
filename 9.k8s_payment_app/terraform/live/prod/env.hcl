@@ -33,10 +33,8 @@ locals {
   postgres_db_name     = "payments"
   postgres_db_username = "payments"
 
-  # PostgreSQL VM
   postgres_instance_type = "t3.small"
 
-  # EKS
   eks_node_instance_type = "t3.medium"
   eks_desired_size       = 2
   eks_min_size           = 2
