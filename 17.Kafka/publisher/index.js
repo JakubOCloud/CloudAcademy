@@ -18,7 +18,7 @@ function createEvent() {
         timestamp: new Date().toISOString(),
 
         payload: {
-            order_id: `A-${Math.floor(Math.random() * 100000)}`,
+            order_id: `A-${Math.floor(Math.random() * 10)}`,
             customer_id: `C-${Math.floor(Math.random() * 1000)}`,
             amount: Number((Math.random() * 500 + 50).toFixed(2)),
             currency: "PLN",
@@ -38,12 +38,16 @@ async function main() {
             topic: TOPIC,
             messages: [
                 {
+                    key: event.payload.order_id,
                     value: JSON.stringify(event),
                 },
             ],
         });
 
         console.log("Published event:");
+        console.log(`Event ID: ${event.event_id}`);
+        console.log(`Order ID: ${event.payload.order_id}`);
+        console.log(`Key: ${event.payload.order_id}`);
         console.log(event);
 
         await new Promise((resolve) => setTimeout(resolve, 1000));
