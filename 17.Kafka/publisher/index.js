@@ -8,10 +8,10 @@ const kafka = new Kafka({
 
 const producer = kafka.producer();
 
-const TOPIC = "system-events";
+const TOPIC = "system-events-raw";
 
-function createEvent() {
-    return {
+function createEvent(isInvalid = false) {
+    const event = {
         event_id: crypto.randomUUID(),
         event_type: "order_created",
         source_service: "publisher-service",
@@ -24,6 +24,24 @@ function createEvent() {
             currency: "PLN",
         },
     };
+
+    if (isInvalid) {
+        const errorType = Math.floor(Math.random() * 3);
+
+        if (errorType === 0) {
+            delete event.payload.order_id;
+        }
+
+        if (errorType === 1) {
+            event.payload.amount = "invalid-amount";
+        }
+
+        if (errorType === 2) {
+            delete event.payload.customer_id;
+        }
+    }
+
+    return event;
 }
 
 async function main() {
@@ -32,13 +50,14 @@ async function main() {
     console.log("Publisher connected to Kafka");
 
     for (let i = 0; i < 10; i++) {
-        const event = createEvent();
+        const isInvalid = i >= 7;
+        const event = createEvent(isInvalid);
 
         await producer.send({
             topic: TOPIC,
             messages: [
                 {
-                    key: event.payload.order_id,
+                    key: event.payload.order_id || event.event_id,
                     value: JSON.stringify(event),
                 },
             ],
@@ -46,8 +65,9 @@ async function main() {
 
         console.log("Published event:");
         console.log(`Event ID: ${event.event_id}`);
-        console.log(`Order ID: ${event.payload.order_id}`);
-        console.log(`Key: ${event.payload.order_id}`);
+        console.log(`Order ID: ${event.payload.order_id || "MISSING"}`);
+        console.log(`Key: ${event.payload.order_id || event.event_id}`);
+        console.log(`Valid: ${!isInvalid}`);
         console.log(event);
 
         await new Promise((resolve) => setTimeout(resolve, 1000));

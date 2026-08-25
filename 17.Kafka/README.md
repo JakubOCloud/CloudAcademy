@@ -81,3 +81,4 @@ Consumer 1 → Partition 0
 Consumer 2 → Partition 1
 Consumer 3 → Partition 2
 Consumer 4 → no partition
+
