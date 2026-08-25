@@ -1,3 +1,5 @@
+# PART 1
+
 ## How does Kafka distribute data between partitions and what are the implications?
 
 Kafka distributes messages between partitions using a partitioning strategy. If a message has a key, messages with the same key usually go to the same partition. Without a key, Kafka can distribute messages between partitions.
@@ -35,3 +37,47 @@ For example, replay can be necessary when:
 * a new version of the application needs to recalculate results.
 
 Kafka makes this possible because messages remain available for the configured retention period.
+
+# PART 2
+
+## Kafka Scaling and Ordering
+
+### Why doesn't Apache Kafka guarantee global event ordering?
+
+Kafka guarantees ordering only within a single partition. Since a topic can have multiple partitions that are processed in parallel, Kafka cannot guarantee one global order for all events in the topic.
+
+For example:
+
+- Partition 0 has: `A → B → C`
+- Partition 1 has: `D → E → F`
+
+The order inside each partition is preserved, but there is no global order between the two partitions.
+
+---
+
+### What determines how many consumer instances actually process data?
+
+The number of partitions determines the maximum number of consumer instances that can actively process data within one consumer group.
+
+If a topic has 3 partitions:
+
+- 1 consumer can process all 3 partitions.
+- 2 consumers can process the partitions in parallel.
+- 3 consumers can each process one partition.
+- More than 3 consumers cannot increase parallelism.
+
+Therefore, the number of partitions is the main limit for consumer parallelism.
+
+---
+
+### What happens when the number of consumers exceeds the number of partitions?
+
+When there are more consumers than partitions, some consumers remain idle because there are no partitions available for them.
+
+For example, with 3 partitions and 4 consumers:
+
+```text
+Consumer 1 → Partition 0
+Consumer 2 → Partition 1
+Consumer 3 → Partition 2
+Consumer 4 → no partition
