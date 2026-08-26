@@ -59,76 +59,112 @@ async function main() {
 
     await consumer.subscribe({
         topic: RAW_TOPIC,
-        fromBeginning: true,
+        fromBeginning: false,
     });
 
     console.log(`Subscribed to ${RAW_TOPIC}`);
 
     await consumer.run({
-        eachMessage: async ({ topic, partition, message }) => {
-            const event = JSON.parse(message.value.toString());
+        autoCommit: false,
 
-            console.log("\n------------------------------");
-            console.log(`Processor: ${INSTANCE_ID}`);
-            console.log(`Topic: ${topic}`);
-            console.log(`Partition: ${partition}`);
-            console.log(`Offset: ${message.offset}`);
-            console.log(`Event ID: ${event.event_id}`);
-            console.log(`Order ID: ${event.payload?.order_id || "MISSING"}`);
-            console.log("------------------------------");
+        eachBatch: async ({
+            batch,
+            resolveOffset,
+            heartbeat,
+            isRunning,
+            isStale,
+        }) => {
+            for (const message of batch.messages) {
+                if (!isRunning() || isStale()) {
+                    break;
+                }
 
-            const validationError = validateEvent(event);
+                const event = JSON.parse(message.value.toString());
 
-            if (validationError) {
-                const dlqEvent = {
-                    source_event_id: event.event_id,
-                    error: validationError,
-                    failed_at: new Date().toISOString(),
-                    original_event: event,
-                };
+                console.log("\n------------------------------");
+                console.log(`Processor: ${INSTANCE_ID}`);
+                console.log(`Topic: ${batch.topic}`);
+                console.log(`Partition: ${batch.partition}`);
+                console.log(`Offset: ${message.offset}`);
+                console.log(`Event ID: ${event.event_id}`);
+                console.log(
+                    `Order ID: ${event.payload?.order_id || "MISSING"}`
+                );
+                console.log("------------------------------");
 
-                await producer.send({
-                    topic: DLQ_TOPIC,
-                    messages: [
-                        {
-                            key: event.event_id,
-                            value: JSON.stringify(dlqEvent),
+                const validationError = validateEvent(event);
+
+                if (validationError) {
+                    const dlqEvent = {
+                        source_event_id: event.event_id,
+                        error: validationError,
+                        failed_at: new Date().toISOString(),
+                        original_event: event,
+                    };
+
+                    await producer.send({
+                        topic: DLQ_TOPIC,
+                        messages: [
+                            {
+                                key: event.event_id,
+                                value: JSON.stringify(dlqEvent),
+                            },
+                        ],
+                    });
+
+                    console.log("❌ Event sent to DLQ");
+                    console.log(`Reason: ${validationError}`);
+                } else {
+                    const processedEvent = {
+                        processed_event_id: `${event.event_id}-processed`,
+                        source_event_id: event.event_id,
+                        event_type: `${event.event_type}_processed`,
+                        processed_at: new Date().toISOString(),
+                        payload: {
+                            order_id: event.payload.order_id,
+                            customer_id: event.payload.customer_id,
+                            amount: event.payload.amount,
+                            currency: event.payload.currency,
                         },
-                    ],
-                });
+                    };
 
-                console.log("❌ Event sent to DLQ");
-                console.log(`Reason: ${validationError}`);
+                    await producer.send({
+                        topic: PROCESSED_TOPIC,
+                        messages: [
+                            {
+                                key: event.payload.order_id,
+                                value: JSON.stringify(processedEvent),
+                            },
+                        ],
+                    });
 
-                return;
+                    console.log("✅ Event processed successfully");
+                    console.log(
+                        `Source Event ID: ${event.event_id}`
+                    );
+                    console.log(
+                        `Processed Event ID: ${processedEvent.processed_event_id}`
+                    );
+                }
+
+                resolveOffset(message.offset);
+
+                await heartbeat();
             }
 
-            const processedEvent = {
-                processed_event_id: `${event.event_id}-processed`,
-                source_event_id: event.event_id,
-                event_type: `${event.event_type}_processed`,
-                processed_at: new Date().toISOString(),
-                payload: {
-                    order_id: event.payload.order_id,
-                    customer_id: event.payload.customer_id,
-                    amount: event.payload.amount,
-                    currency: event.payload.currency,
+            await consumer.commitOffsets([
+                {
+                    topic: batch.topic,
+                    partition: batch.partition,
+                    offset: (
+                        BigInt(batch.messages[batch.messages.length - 1].offset) + 1n
+                    ).toString(),
                 },
-            };
+            ]);
 
-            await producer.send({
-                topic: PROCESSED_TOPIC,
-                messages: [
-                    {
-                        key: event.payload.order_id,
-                        value: JSON.stringify(processedEvent),
-                    },
-                ],
-            });
-
-            console.log("✅ Event processed successfully");
-            console.log(`Source Event ID: ${event.event_id}`);
-            console.log(`Processed Event ID: ${processedEvent.processed_event_id}`);
+            console.log(
+                `Committed offset for partition ${batch.partition}`
+            );
         },
     });
 }
