@@ -16,6 +16,7 @@ const producer = kafka.producer();
 const RAW_TOPIC = "system-events-raw";
 const PROCESSED_TOPIC = "system-events-processed";
 const DLQ_TOPIC = "system-events-dlq";
+const SIMULATE_CRASH = process.env.SIMULATE_CRASH === "true";
 
 function validateEvent(event) {
     if (!event.event_id) {
@@ -112,7 +113,7 @@ async function main() {
                         ],
                     });
 
-                    console.log("❌ Event sent to DLQ");
+                    console.log("Event sent to DLQ");
                     console.log(`Reason: ${validationError}`);
                 } else {
                     const processedEvent = {
@@ -138,13 +139,18 @@ async function main() {
                         ],
                     });
 
-                    console.log("✅ Event processed successfully");
+                    console.log("Event processed successfully");
                     console.log(
                         `Source Event ID: ${event.event_id}`
                     );
                     console.log(
                         `Processed Event ID: ${processedEvent.processed_event_id}`
                     );
+
+                    if (SIMULATE_CRASH) {
+                        console.log("Simulating application crash before offset commit...");
+                        process.exit(1);
+                    }
                 }
 
                 resolveOffset(message.offset);
