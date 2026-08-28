@@ -8,7 +8,7 @@ const kafka = new Kafka({
 });
 
 const consumer = kafka.consumer({
-    groupId: "event-processors",
+    groupId: "event-processors-replay",
 });
 
 const producer = kafka.producer();
@@ -171,7 +171,7 @@ async function main() {
 
     await consumer.subscribe({
         topic: RAW_TOPIC,
-        fromBeginning: false,
+        fromBeginning: true,
     });
 
     console.log(`Subscribed to ${RAW_TOPIC}`);
