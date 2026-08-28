@@ -179,20 +179,68 @@ async function main() {
     await consumer.run({
         autoCommit: false,
 
-        eachMessage: async ({ topic, partition, message, heartbeat }) => {
-            try {
-                await processMessage(message, {
-                    topic,
-                    partition,
-                });
-            } catch (error) {
-                console.error(
-                    `Processing error at offset ${message.offset}:`,
-                    error
-                );
+        eachBatch: async ({
+            batch,
+            resolveOffset,
+            heartbeat,
+            isRunning,
+            isStale,
+        }) => {
+            let lastProcessedOffset = null;
+
+            for (const message of batch.messages) {
+                if (!isRunning() || isStale()) {
+                    break;
+                }
+
+                try {
+                    await processMessage(message, batch);
+
+                    /*
+                     * The event was successfully processed
+                     * or successfully sent to DLQ.
+                     */
+                    resolveOffset(message.offset);
+
+                    lastProcessedOffset = message.offset;
+                } catch (error) {
+                    console.error(
+                        `Processing error at offset ${message.offset}:`,
+                        error
+                    );
+
+                    /*
+                     * Do not resolve this message.
+                     *
+                     * Kafka can deliver it again after restart.
+                     */
+                    break;
+                }
+
+                await heartbeat();
             }
 
-            await heartbeat();
+            /*
+             * Commit only when at least one message was successfully
+             * processed or sent to DLQ.
+             */
+            if (lastProcessedOffset !== null) {
+                const nextOffset = (
+                    BigInt(lastProcessedOffset) + 1n
+                ).toString();
+
+                await consumer.commitOffsets([
+                    {
+                        topic: batch.topic,
+                        partition: batch.partition,
+                        offset: nextOffset,
+                    },
+                ]);
+
+                console.log(
+                    `Committed offset ${nextOffset} for partition ${batch.partition}`
+                );
+            }
         },
     });
 }
