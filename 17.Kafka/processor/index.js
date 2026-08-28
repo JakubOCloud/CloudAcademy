@@ -196,10 +196,6 @@ async function main() {
                 try {
                     await processMessage(message, batch);
 
-                    /*
-                     * The event was successfully processed
-                     * or successfully sent to DLQ.
-                     */
                     resolveOffset(message.offset);
 
                     lastProcessedOffset = message.offset;
@@ -209,21 +205,12 @@ async function main() {
                         error
                     );
 
-                    /*
-                     * Do not resolve this message.
-                     *
-                     * Kafka can deliver it again after restart.
-                     */
                     break;
                 }
 
                 await heartbeat();
             }
 
-            /*
-             * Commit only when at least one message was successfully
-             * processed or sent to DLQ.
-             */
             if (lastProcessedOffset !== null) {
                 const nextOffset = (
                     BigInt(lastProcessedOffset) + 1n
