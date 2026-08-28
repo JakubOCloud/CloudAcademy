@@ -16,9 +16,14 @@ const producer = kafka.producer();
 const RAW_TOPIC = "system-events-raw";
 const PROCESSED_TOPIC = "system-events-processed";
 const DLQ_TOPIC = "system-events-dlq";
+
 const SIMULATE_CRASH = process.env.SIMULATE_CRASH === "true";
 
 function validateEvent(event) {
+    if (!event || typeof event !== "object") {
+        return "Event must be an object";
+    }
+
     if (!event.event_id) {
         return "Missing event_id";
     }
@@ -27,7 +32,7 @@ function validateEvent(event) {
         return "Missing event_type";
     }
 
-    if (!event.payload) {
+    if (!event.payload || typeof event.payload !== "object") {
         return "Missing payload";
     }
 
@@ -50,6 +55,112 @@ function validateEvent(event) {
     return null;
 }
 
+async function sendToDLQ(message, error, originalEvent = null) {
+    const dlqEvent = {
+        source_event_id: originalEvent?.event_id || null,
+        error: error,
+        failed_at: new Date().toISOString(),
+        original_event: originalEvent,
+        original_message: {
+            key: message.key?.toString() || null,
+            value: message.value?.toString() || null,
+        },
+    };
+
+    await producer.send({
+        topic: DLQ_TOPIC,
+        messages: [
+            {
+                key:
+                    originalEvent?.event_id ||
+                    message.key?.toString() ||
+                    message.offset,
+                value: JSON.stringify(dlqEvent),
+            },
+        ],
+    });
+
+    console.log("Event sent to DLQ");
+    console.log(`Reason: ${error}`);
+}
+
+async function processMessage(message, batch) {
+    let event;
+
+    try {
+        event = JSON.parse(message.value.toString());
+    } catch (error) {
+        console.error(`Invalid JSON at offset ${message.offset}`);
+
+        await sendToDLQ(
+            message,
+            `Invalid JSON: ${error.message}`
+        );
+
+        return;
+    }
+
+    console.log("\n------------------------------");
+    console.log(`Processor: ${INSTANCE_ID}`);
+    console.log(`Topic: ${batch.topic}`);
+    console.log(`Partition: ${batch.partition}`);
+    console.log(`Offset: ${message.offset}`);
+    console.log(`Event ID: ${event.event_id || "MISSING"}`);
+    console.log(
+        `Order ID: ${event.payload?.order_id || "MISSING"}`
+    );
+    console.log("------------------------------");
+
+    const validationError = validateEvent(event);
+
+    if (validationError) {
+        await sendToDLQ(
+            message,
+            validationError,
+            event
+        );
+
+        return;
+    }
+
+    const processedEvent = {
+        processed_event_id: `${event.event_id}-processed`,
+        source_event_id: event.event_id,
+        event_type: `${event.event_type}_processed`,
+        processed_at: new Date().toISOString(),
+        payload: {
+            order_id: event.payload.order_id,
+            customer_id: event.payload.customer_id,
+            amount: event.payload.amount,
+            currency: event.payload.currency,
+        },
+    };
+
+    await producer.send({
+        topic: PROCESSED_TOPIC,
+        messages: [
+            {
+                key: event.payload.order_id,
+                value: JSON.stringify(processedEvent),
+            },
+        ],
+    });
+
+    console.log("Event processed successfully");
+    console.log(`Source Event ID: ${event.event_id}`);
+    console.log(
+        `Processed Event ID: ${processedEvent.processed_event_id}`
+    );
+
+    if (SIMULATE_CRASH) {
+        console.log(
+            "Simulating application crash before offset commit..."
+        );
+
+        process.exit(1);
+    }
+}
+
 async function main() {
     await consumer.connect();
     await producer.connect();
@@ -68,109 +179,20 @@ async function main() {
     await consumer.run({
         autoCommit: false,
 
-        eachBatch: async ({
-            batch,
-            resolveOffset,
-            heartbeat,
-            isRunning,
-            isStale,
-        }) => {
-            for (const message of batch.messages) {
-                if (!isRunning() || isStale()) {
-                    break;
-                }
-
-                const event = JSON.parse(message.value.toString());
-
-                console.log("\n------------------------------");
-                console.log(`Processor: ${INSTANCE_ID}`);
-                console.log(`Topic: ${batch.topic}`);
-                console.log(`Partition: ${batch.partition}`);
-                console.log(`Offset: ${message.offset}`);
-                console.log(`Event ID: ${event.event_id}`);
-                console.log(
-                    `Order ID: ${event.payload?.order_id || "MISSING"}`
+        eachMessage: async ({ topic, partition, message, heartbeat }) => {
+            try {
+                await processMessage(message, {
+                    topic,
+                    partition,
+                });
+            } catch (error) {
+                console.error(
+                    `Processing error at offset ${message.offset}:`,
+                    error
                 );
-                console.log("------------------------------");
-
-                const validationError = validateEvent(event);
-
-                if (validationError) {
-                    const dlqEvent = {
-                        source_event_id: event.event_id,
-                        error: validationError,
-                        failed_at: new Date().toISOString(),
-                        original_event: event,
-                    };
-
-                    await producer.send({
-                        topic: DLQ_TOPIC,
-                        messages: [
-                            {
-                                key: event.event_id,
-                                value: JSON.stringify(dlqEvent),
-                            },
-                        ],
-                    });
-
-                    console.log("Event sent to DLQ");
-                    console.log(`Reason: ${validationError}`);
-                } else {
-                    const processedEvent = {
-                        processed_event_id: `${event.event_id}-processed`,
-                        source_event_id: event.event_id,
-                        event_type: `${event.event_type}_processed`,
-                        processed_at: new Date().toISOString(),
-                        payload: {
-                            order_id: event.payload.order_id,
-                            customer_id: event.payload.customer_id,
-                            amount: event.payload.amount,
-                            currency: event.payload.currency,
-                        },
-                    };
-
-                    await producer.send({
-                        topic: PROCESSED_TOPIC,
-                        messages: [
-                            {
-                                key: event.payload.order_id,
-                                value: JSON.stringify(processedEvent),
-                            },
-                        ],
-                    });
-
-                    console.log("Event processed successfully");
-                    console.log(
-                        `Source Event ID: ${event.event_id}`
-                    );
-                    console.log(
-                        `Processed Event ID: ${processedEvent.processed_event_id}`
-                    );
-
-                    if (SIMULATE_CRASH) {
-                        console.log("Simulating application crash before offset commit...");
-                        process.exit(1);
-                    }
-                }
-
-                resolveOffset(message.offset);
-
-                await heartbeat();
             }
 
-            await consumer.commitOffsets([
-                {
-                    topic: batch.topic,
-                    partition: batch.partition,
-                    offset: (
-                        BigInt(batch.messages[batch.messages.length - 1].offset) + 1n
-                    ).toString(),
-                },
-            ]);
-
-            console.log(
-                `Committed offset for partition ${batch.partition}`
-            );
+            await heartbeat();
         },
     });
 }
@@ -178,8 +200,13 @@ async function main() {
 main().catch(async (error) => {
     console.error(error);
 
-    await consumer.disconnect();
-    await producer.disconnect();
+    try {
+        await consumer.disconnect();
+    } catch (e) { }
+
+    try {
+        await producer.disconnect();
+    } catch (e) { }
 
     process.exit(1);
 });
