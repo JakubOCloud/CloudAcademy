@@ -8,7 +8,7 @@ const kafka = new Kafka({
 });
 
 const consumer = kafka.consumer({
-    groupId: "event-processors-replay",
+    groupId: "event-processors-replay-v2",
 });
 
 const producer = kafka.producer();
