@@ -58,7 +58,7 @@ function validateEvent(event) {
 async function sendToDLQ(message, error, originalEvent = null) {
     const dlqEvent = {
         source_event_id: originalEvent?.event_id || null,
-        error: error,
+        error,
         failed_at: new Date().toISOString(),
         original_event: originalEvent,
         original_message: {
@@ -84,7 +84,7 @@ async function sendToDLQ(message, error, originalEvent = null) {
     console.log(`Reason: ${error}`);
 }
 
-async function processMessage(message, batch) {
+async function processMessage(message, partition) {
     let event;
 
     try {
@@ -102,8 +102,8 @@ async function processMessage(message, batch) {
 
     console.log("\n------------------------------");
     console.log(`Processor: ${INSTANCE_ID}`);
-    console.log(`Topic: ${batch.topic}`);
-    console.log(`Partition: ${batch.partition}`);
+    console.log(`Topic: ${RAW_TOPIC}`);
+    console.log(`Partition: ${partition}`);
     console.log(`Offset: ${message.offset}`);
     console.log(`Event ID: ${event.event_id || "MISSING"}`);
     console.log(
@@ -124,14 +124,17 @@ async function processMessage(message, batch) {
     }
 
     const processedEvent = {
-        processed_event_id: `${event.event_id}-processed`,
+        processed_event_id: `${event.event_id}-processed-v2`,
         source_event_id: event.event_id,
-        event_type: `${event.event_type}_processed`,
+        event_type: `${event.event_type}_processed_v2`,
         processed_at: new Date().toISOString(),
         payload: {
             order_id: event.payload.order_id,
             customer_id: event.payload.customer_id,
             amount: event.payload.amount,
+            amount_with_fee: Number(
+                (event.payload.amount * 1.23).toFixed(2)
+            ),
             currency: event.payload.currency,
         },
     };
@@ -167,7 +170,7 @@ async function main() {
 
     console.log("Processor connected to Kafka");
     console.log(`Instance ID: ${INSTANCE_ID}`);
-    console.log("Consumer group: event-processors");
+    console.log("Consumer group: event-processors-replay");
 
     await consumer.subscribe({
         topic: RAW_TOPIC,
@@ -179,53 +182,33 @@ async function main() {
     await consumer.run({
         autoCommit: false,
 
-        eachBatch: async ({
-            batch,
-            resolveOffset,
-            heartbeat,
-            isRunning,
-            isStale,
+        eachMessage: async ({
+            topic,
+            partition,
+            message,
         }) => {
-            let lastProcessedOffset = null;
+            try {
+                await processMessage(message, partition);
 
-            for (const message of batch.messages) {
-                if (!isRunning() || isStale()) {
-                    break;
-                }
-
-                try {
-                    await processMessage(message, batch);
-
-                    resolveOffset(message.offset);
-
-                    lastProcessedOffset = message.offset;
-                } catch (error) {
-                    console.error(
-                        `Processing error at offset ${message.offset}:`,
-                        error
-                    );
-
-                    break;
-                }
-
-                await heartbeat();
-            }
-
-            if (lastProcessedOffset !== null) {
                 const nextOffset = (
-                    BigInt(lastProcessedOffset) + 1n
+                    BigInt(message.offset) + 1n
                 ).toString();
 
                 await consumer.commitOffsets([
                     {
-                        topic: batch.topic,
-                        partition: batch.partition,
+                        topic,
+                        partition,
                         offset: nextOffset,
                     },
                 ]);
 
                 console.log(
-                    `Committed offset ${nextOffset} for partition ${batch.partition}`
+                    `Committed offset ${nextOffset} for partition ${partition}`
+                );
+            } catch (error) {
+                console.error(
+                    `Processing error at offset ${message.offset}:`,
+                    error
                 );
             }
         },
