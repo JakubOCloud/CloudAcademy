@@ -3,7 +3,9 @@ const crypto = require("crypto");
 
 const kafka = new Kafka({
     clientId: "publisher-service",
-    brokers: ["localhost:9092"],
+    brokers: [
+        process.env.KAFKA_BROKERS || "localhost:9092"
+    ],
 });
 
 const producer = kafka.producer();
