@@ -1,0 +1,93 @@
+pipeline {
+
+    agent any
+
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+    }
+
+    parameters {
+
+        choice(
+            name: 'ENV',
+            choices: ['dev', 'test'],
+            description: 'Environment to use'
+        )
+
+        booleanParam(
+            name: 'RUN_TESTS',
+            defaultValue: true,
+            description: 'Run automated tests'
+        )
+
+        string(
+            name: 'BUILD_VERSION',
+            defaultValue: '1.0.0',
+            description: 'Build version'
+        )
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                echo "Checking out source code..."
+                checkout scm
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                echo "Installing dependencies..."
+                echo "Environment: ${params.ENV}"
+                echo "Build version: ${params.BUILD_VERSION}"
+
+                sh 'npm install'
+            }
+        }
+
+        stage('Run Tests') {
+            when {
+                expression {
+                    return params.RUN_TESTS
+                }
+            }
+
+            steps {
+                echo "Running tests..."
+                sh 'npm test'
+            }
+        }
+    }
+
+    post {
+
+        success {
+            echo "BUILD SUCCESSFUL"
+        }
+
+        failure {
+            echo "BUILD FAILED - check the logs"
+        }
+
+        always {
+            echo "BUILD FINISHED"
+            echo "Environment: ${params.ENV}"
+            echo "Build version: ${params.BUILD_VERSION}"
+
+            writeFile(
+                file: 'build-info.txt',
+                text: """Build version: ${params.BUILD_VERSION}
+Environment: ${params.ENV}
+Build number: ${env.BUILD_NUMBER}
+"""
+            )
+
+            archiveArtifacts(
+                artifacts: 'build-info.txt',
+                allowEmptyArchive: false
+            )
+        }
+    }
+}
