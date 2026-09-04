@@ -7,7 +7,7 @@ describe("Task Management API", () => {
         const response = await request(app)
             .get("/health");
 
-        expect(response.statusCode).toBe(200);
+        expect(response.statusCode).toBe(201);
         expect(response.body.status).toBe("ok");
     });
 
@@ -15,7 +15,7 @@ describe("Task Management API", () => {
         const response = await request(app)
             .get("/tasks");
 
-        expect(response.statusCode).toBe(200);
+        expect(response.statusCode).toBe(201);
         expect(Array.isArray(response.body)).toBe(true);
     });
 
