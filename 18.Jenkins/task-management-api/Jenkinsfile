@@ -43,7 +43,9 @@ pipeline {
                 echo "Environment: ${params.ENV}"
                 echo "Build version: ${params.BUILD_VERSION}"
 
-                sh 'npm install'
+                dir('18.Jenkins/task-management-api') {
+                    sh 'npm install'
+                }
             }
         }
 
@@ -56,7 +58,10 @@ pipeline {
 
             steps {
                 echo "Running tests..."
-                sh 'npm test'
+
+                dir('18.Jenkins/task-management-api') {
+                    sh 'npm test'
+                }
             }
         }
     }
