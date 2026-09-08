@@ -1,6 +1,8 @@
 pipeline {
 
-    agent any
+    agent {
+        label 'ci'
+    }
 
     options {
         timestamps()
@@ -36,6 +38,18 @@ pipeline {
                 checkout scm
             }
         }
+
+        stage('Agent Info') {
+            steps {
+                sh '''
+                    echo "Jenkins node: $NODE_NAME"
+                    echo "Hostname: $(hostname)"
+                    echo "Node.js: $(node --version)"
+                    echo "npm: $(npm --version)"
+                    echo "Docker: $(docker --version)"
+                '''
+            }
+}
 
         stage('Install Dependencies') {
             steps {
