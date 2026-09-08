@@ -1,0 +1,15 @@
+FROM jenkins/inbound-agent:latest-jdk17
+
+USER root
+
+RUN apt-get update && \
+    apt-get install -y curl ca-certificates docker.io && \
+    curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
+    apt-get install -y nodejs && \
+    node --version && \
+    npm --version && \
+    docker --version && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+USER jenkins
