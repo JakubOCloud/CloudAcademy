@@ -49,7 +49,7 @@ pipeline {
                     echo "Docker: $(docker --version)"
                 '''
             }
-}
+        }
 
         stage('Install Dependencies') {
             steps {
@@ -78,6 +78,65 @@ pipeline {
                 }
             }
         }
+
+        stage('Docker Build') {
+            steps {
+                echo "Building Docker image..."
+
+                dir('18.Jenkins/task-management-api') {
+                    sh 'docker build -t task-api:local .'
+                }
+            }
+        }
+
+        stage('Docker Run') {
+            steps {
+                echo "Starting Docker container..."
+
+                dir('18.Jenkins/task-management-api') {
+                    sh '''
+                        docker rm -f task-api-container 2>/dev/null || true
+
+                        docker run -d \
+                            --name task-api-container \
+                            -p 3000:3000 \
+                            task-api:local
+
+                        echo "Waiting for application..."
+
+                        for i in $(seq 1 10); do
+                            if curl --fail --silent http://host.docker.internal:3000/health; then
+                                echo ""
+                                echo "Health check passed!"
+                                exit 0
+                            fi
+
+                            sleep 1
+                        done
+
+                        echo "Health check failed!"
+                        docker logs task-api-container
+                        exit 1
+                    '''
+                }
+            }
+        }
+
+        stage('Use Credentials') {
+            steps {
+                withCredentials([
+                    string(
+                        credentialsId: 'part2-demo-secret',
+                        variable: 'DEMO_SECRET'
+                    )
+                ]) {
+                    sh '''
+                        test -n "$DEMO_SECRET"
+                        echo "Credential bound successfully"
+                    '''
+                }
+            }
+        }
     }
 
     post {
@@ -91,6 +150,8 @@ pipeline {
         }
 
         always {
+            sh 'docker rm -f task-api-container 2>/dev/null || true'
+
             echo "BUILD FINISHED"
             echo "Environment: ${params.ENV}"
             echo "Build version: ${params.BUILD_VERSION}"
