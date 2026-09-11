@@ -25,3 +25,7 @@ output "ecs_execution_role_arn" {
 output "ecs_task_role_arn" {
   value = module.iam.ecs_task_role_arn
 }
+
+output "ecs_log_group_name" {
+  value = module.monitoring.ecs_log_group_name
+}

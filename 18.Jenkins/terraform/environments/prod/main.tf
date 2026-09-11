@@ -29,3 +29,10 @@ module "iam" {
   environment        = var.environment
   ecr_repository_arn = module.ecr.repository_arn
 }
+
+module "monitoring" {
+  source = "../../modules/monitoring"
+
+  environment       = var.environment
+  retention_in_days = 14
+}
