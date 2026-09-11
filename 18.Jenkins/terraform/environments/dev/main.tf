@@ -22,3 +22,10 @@ module "alb" {
 
   target_port = 3000
 }
+
+module "iam" {
+  source = "../../modules/iam"
+
+  environment        = var.environment
+  ecr_repository_arn = module.ecr.repository_arn
+}
