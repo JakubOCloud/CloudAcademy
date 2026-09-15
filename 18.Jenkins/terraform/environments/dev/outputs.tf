@@ -29,3 +29,7 @@ output "ecs_task_role_arn" {
 output "ecs_log_group_name" {
   value = module.monitoring.ecs_log_group_name
 }
+
+output "secret_arn" {
+  value = module.secrets.secret_arn
+}

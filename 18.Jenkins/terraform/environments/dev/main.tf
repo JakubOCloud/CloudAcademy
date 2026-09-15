@@ -56,3 +56,9 @@ module "ecs" {
   memory         = 512
   container_port = 3000
 }
+
+module "secrets" {
+  source = "../../modules/secrets"
+
+  environment = var.environment
+}
