@@ -28,6 +28,7 @@ module "iam" {
 
   environment        = var.environment
   ecr_repository_arn = module.ecr.repository_arn
+  secret_arn         = module.secrets.secret_arn
 }
 
 module "monitoring" {
@@ -50,6 +51,8 @@ module "ecs" {
   execution_role_arn    = module.iam.ecs_execution_role_arn
   task_role_arn         = module.iam.ecs_task_role_arn
   log_group_name        = module.monitoring.ecs_log_group_name
+
+  secret_arn = module.secrets.secret_arn
 
   desired_count  = 2
   cpu            = 256

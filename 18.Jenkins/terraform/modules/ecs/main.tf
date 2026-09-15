@@ -54,6 +54,13 @@ resource "aws_ecs_task_definition" "this" {
       image     = "${var.ecr_repository_url}:${var.image_tag}"
       essential = true
 
+      secrets = [
+        {
+          name      = "TASK_API_SECRET"
+          valueFrom = var.secret_arn
+        }
+      ]
+
       portMappings = [
         {
           containerPort = var.container_port

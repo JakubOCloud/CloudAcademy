@@ -50,6 +50,13 @@ resource "aws_iam_role_policy" "ecs_execution" {
           "logs:PutLogEvents"
         ]
         Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ]
+        Resource = var.secret_arn
       }
     ]
   })

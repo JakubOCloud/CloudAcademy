@@ -71,3 +71,8 @@ variable "container_port" {
   type        = number
   default     = 3000
 }
+
+variable "secret_arn" {
+  description = "ARN of the application secret"
+  type        = string
+}
