@@ -17,3 +17,9 @@ variable "availability_zones" {
   description = "Availability zones"
   type        = list(string)
 }
+
+variable "image_tag" {
+  description = "Docker image tag to deploy"
+  type        = string
+  default     = "bootstrap-1"
+}

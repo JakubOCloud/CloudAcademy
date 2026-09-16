@@ -47,7 +47,7 @@ module "ecs" {
   alb_security_group_id = module.alb.alb_security_group_id
   target_group_arn      = module.alb.target_group_arn
   ecr_repository_url    = module.ecr.repository_url
-  image_tag             = "bootstrap-1"
+  image_tag             = var.image_tag
   execution_role_arn    = module.iam.ecs_execution_role_arn
   task_role_arn         = module.iam.ecs_task_role_arn
   log_group_name        = module.monitoring.ecs_log_group_name
