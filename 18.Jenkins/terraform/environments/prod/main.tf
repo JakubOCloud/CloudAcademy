@@ -21,7 +21,7 @@ module "iam" {
   source = "../../modules/iam"
 
   environment        = var.environment
-  ecr_repository_arn = module.ecr.repository_arn
+  ecr_repository_arn = "arn:aws:ecr:eu-central-1:366183011726:repository/task-management-api-prod"
   secret_arn         = module.secrets.secret_arn
 }
 
@@ -40,7 +40,7 @@ module "ecs" {
   private_subnet_ids    = module.networking.private_subnet_ids
   alb_security_group_id = module.alb.alb_security_group_id
   target_group_arn      = module.alb.target_group_arn
-  ecr_repository_url    = module.ecr.repository_url
+  ecr_repository_url    = "366183011726.dkr.ecr.eu-central-1.amazonaws.com/task-management-api-prod"
   image_tag             = var.image_tag
   execution_role_arn    = module.iam.ecs_execution_role_arn
   task_role_arn         = module.iam.ecs_task_role_arn
