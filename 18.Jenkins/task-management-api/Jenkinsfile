@@ -9,8 +9,21 @@ pipeline {
     environment {
         AWS_REGION = 'eu-central-1'
         AWS_ACCOUNT_ID = '366183011726'
+
         ECR_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
-        ECR_REPOSITORY = 'task-management-api-dev'
+
+        DEV_REPOSITORY = 'task-management-api-dev'
+        PROD_REPOSITORY = 'task-management-api-prod'
+
+        DEV_CLUSTER = 'dev-cluster'
+        DEV_SERVICE = 'task-management-api-dev'
+
+        PROD_CLUSTER = 'prod-cluster'
+        PROD_SERVICE = 'task-management-api-prod'
+
+        DEV_ALB = 'dev-alb-1122742776.eu-central-1.elb.amazonaws.com'
+        PROD_ALB = 'prod-alb-555651977.eu-central-1.elb.amazonaws.com'
+
         APP_DIR = '18.Jenkins/task-management-api'
     }
 
@@ -43,7 +56,7 @@ pipeline {
                 dir("${APP_DIR}") {
                     sh '''
                         docker build \
-                          -t "$ECR_REGISTRY/$ECR_REPOSITORY:$GIT_COMMIT" \
+                          -t "$ECR_REGISTRY/$DEV_REPOSITORY:$GIT_COMMIT" \
                           .
                     '''
                 }
@@ -62,11 +75,234 @@ pipeline {
             }
         }
 
-        stage('Push Image') {
+        stage('Push DEV Image') {
             steps {
                 sh '''
                     docker push \
-                      "$ECR_REGISTRY/$ECR_REPOSITORY:$GIT_COMMIT"
+                      "$ECR_REGISTRY/$DEV_REPOSITORY:$GIT_COMMIT"
+                '''
+            }
+        }
+
+        stage('Deploy DEV') {
+            steps {
+                sh '''
+                    set -e
+
+                    IMAGE="$ECR_REGISTRY/$DEV_REPOSITORY:$GIT_COMMIT"
+
+                    echo "Deploying DEV:"
+                    echo "$IMAGE"
+
+                    CURRENT_TASK_DEF=$(aws ecs describe-services \
+                      --cluster "$DEV_CLUSTER" \
+                      --services "$DEV_SERVICE" \
+                      --region "$AWS_REGION" \
+                      --query 'services[0].taskDefinition' \
+                      --output text)
+
+                    echo "Current task definition:"
+                    echo "$CURRENT_TASK_DEF"
+
+                    aws ecs describe-task-definition \
+                      --task-definition "$CURRENT_TASK_DEF" \
+                      --region "$AWS_REGION" \
+                      --query 'taskDefinition' \
+                      > task-definition.json
+
+                    python3 - "$IMAGE" <<'PY'
+import json
+import sys
+
+image = sys.argv[1]
+
+with open("task-definition.json") as f:
+    task_definition = json.load(f)
+
+for container in task_definition["containerDefinitions"]:
+    if container["name"] == "task-management-api":
+        container["image"] = image
+
+for field in [
+    "taskDefinitionArn",
+    "revision",
+    "status",
+    "requiresAttributes",
+    "compatibilities",
+    "registeredAt",
+    "registeredBy"
+]:
+    task_definition.pop(field, None)
+
+with open("task-definition-new.json", "w") as f:
+    json.dump(task_definition, f)
+
+PY
+
+                    NEW_TASK_DEF=$(aws ecs register-task-definition \
+                      --cli-input-json file://task-definition-new.json \
+                      --region "$AWS_REGION" \
+                      --query 'taskDefinition.taskDefinitionArn' \
+                      --output text)
+
+                    echo "New task definition:"
+                    echo "$NEW_TASK_DEF"
+
+                    aws ecs update-service \
+                      --cluster "$DEV_CLUSTER" \
+                      --service "$DEV_SERVICE" \
+                      --task-definition "$NEW_TASK_DEF" \
+                      --region "$AWS_REGION"
+
+                    aws ecs wait services-stable \
+                      --cluster "$DEV_CLUSTER" \
+                      --services "$DEV_SERVICE" \
+                      --region "$AWS_REGION"
+
+                    echo "DEV deployment completed."
+                '''
+            }
+        }
+
+        stage('Smoke Test DEV') {
+            steps {
+                sh '''
+                    set -e
+
+                    echo "Testing DEV:"
+                    curl --fail --silent --show-error \
+                      "http://$DEV_ALB/health"
+
+                    echo ""
+                    echo "DEV health check passed."
+                '''
+            }
+        }
+
+        stage('Approve PROD') {
+            steps {
+                input message: 'DEV deployment succeeded. Deploy this version to PROD?', \
+                      ok: 'Deploy to PROD'
+            }
+        }
+
+        stage('Promote Image to PROD') {
+            steps {
+                sh '''
+                    set -e
+
+                    DEV_IMAGE="$ECR_REGISTRY/$DEV_REPOSITORY:$GIT_COMMIT"
+                    PROD_IMAGE="$ECR_REGISTRY/$PROD_REPOSITORY:$GIT_COMMIT"
+
+                    echo "Promoting image:"
+                    echo "$DEV_IMAGE"
+                    echo "→"
+                    echo "$PROD_IMAGE"
+
+                    docker pull "$DEV_IMAGE"
+
+                    docker tag \
+                      "$DEV_IMAGE" \
+                      "$PROD_IMAGE"
+
+                    docker push "$PROD_IMAGE"
+
+                    echo "Image promoted to PROD ECR."
+                '''
+            }
+        }
+
+        stage('Deploy PROD') {
+            steps {
+                sh '''
+                    set -e
+
+                    IMAGE="$ECR_REGISTRY/$PROD_REPOSITORY:$GIT_COMMIT"
+
+                    echo "Deploying PROD:"
+                    echo "$IMAGE"
+
+                    CURRENT_TASK_DEF=$(aws ecs describe-services \
+                      --cluster "$PROD_CLUSTER" \
+                      --services "$PROD_SERVICE" \
+                      --region "$AWS_REGION" \
+                      --query 'services[0].taskDefinition' \
+                      --output text)
+
+                    echo "Current task definition:"
+                    echo "$CURRENT_TASK_DEF"
+
+                    aws ecs describe-task-definition \
+                      --task-definition "$CURRENT_TASK_DEF" \
+                      --region "$AWS_REGION" \
+                      --query 'taskDefinition' \
+                      > task-definition-prod.json
+
+                    python3 - "$IMAGE" <<'PY'
+import json
+import sys
+
+image = sys.argv[1]
+
+with open("task-definition-prod.json") as f:
+    task_definition = json.load(f)
+
+for container in task_definition["containerDefinitions"]:
+    if container["name"] == "task-management-api":
+        container["image"] = image
+
+for field in [
+    "taskDefinitionArn",
+    "revision",
+    "status",
+    "requiresAttributes",
+    "compatibilities",
+    "registeredAt",
+    "registeredBy"
+]:
+    task_definition.pop(field, None)
+
+with open("task-definition-prod-new.json", "w") as f:
+    json.dump(task_definition, f)
+
+PY
+
+                    NEW_TASK_DEF=$(aws ecs register-task-definition \
+                      --cli-input-json file://task-definition-prod-new.json \
+                      --region "$AWS_REGION" \
+                      --query 'taskDefinition.taskDefinitionArn' \
+                      --output text)
+
+                    echo "New PROD task definition:"
+                    echo "$NEW_TASK_DEF"
+
+                    aws ecs update-service \
+                      --cluster "$PROD_CLUSTER" \
+                      --service "$PROD_SERVICE" \
+                      --task-definition "$NEW_TASK_DEF" \
+                      --region "$AWS_REGION"
+
+                    aws ecs wait services-stable \
+                      --cluster "$PROD_CLUSTER" \
+                      --services "$PROD_SERVICE" \
+                      --region "$AWS_REGION"
+
+                    echo "PROD deployment completed."
+                '''
+            }
+        }
+
+        stage('Smoke Test PROD') {
+            steps {
+                sh '''
+                    set -e
+
+                    echo "Testing PROD:"
+                    curl --fail --silent --show-error \
+                      "http://$PROD_ALB/health"
+
+                    echo ""
+                    echo "PROD health check passed."
                 '''
             }
         }
@@ -74,13 +310,23 @@ pipeline {
 
     post {
         success {
-            echo "Build and ECR push completed successfully."
-            echo "Image: ${ECR_REGISTRY}/${ECR_REPOSITORY}:${GIT_COMMIT}"
+            echo "========================================"
+            echo "CI/CD PIPELINE COMPLETED SUCCESSFULLY"
+            echo "Version: ${GIT_COMMIT}"
+            echo "========================================"
+        }
+
+        failure {
+            echo "Pipeline failed."
         }
 
         always {
             sh '''
                 docker image prune -f || true
+                rm -f task-definition.json
+                rm -f task-definition-new.json
+                rm -f task-definition-prod.json
+                rm -f task-definition-prod-new.json
             '''
         }
     }
