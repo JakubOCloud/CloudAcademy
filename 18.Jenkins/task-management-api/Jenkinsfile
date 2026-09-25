@@ -1,79 +1,38 @@
 pipeline {
-
-    agent {
-        label 'ci'
-    }
+    agent { label 'ci' }
 
     options {
         timestamps()
         disableConcurrentBuilds()
     }
 
-    parameters {
-
-        choice(
-            name: 'ENV',
-            choices: ['dev', 'test'],
-            description: 'Environment to use'
-        )
-
-        booleanParam(
-            name: 'RUN_TESTS',
-            defaultValue: true,
-            description: 'Run automated tests'
-        )
-
-        string(
-            name: 'BUILD_VERSION',
-            defaultValue: '1.0.0',
-            description: 'Build version'
-        )
+    environment {
+        AWS_REGION = 'eu-central-1'
+        AWS_ACCOUNT_ID = '366183011726'
+        ECR_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+        ECR_REPOSITORY = 'task-management-api-dev'
+        APP_DIR = '18.Jenkins/task-management-api'
     }
 
     stages {
 
         stage('Checkout') {
             steps {
-                echo "Checking out source code..."
                 checkout scm
-            }
-        }
-
-        stage('Agent Info') {
-            steps {
-                sh '''
-                    echo "Jenkins node: $NODE_NAME"
-                    echo "Hostname: $(hostname)"
-                    echo "Node.js: $(node --version)"
-                    echo "npm: $(npm --version)"
-                    echo "Docker: $(docker --version)"
-                '''
             }
         }
 
         stage('Install Dependencies') {
             steps {
-                echo "Installing dependencies..."
-                echo "Environment: ${params.ENV}"
-                echo "Build version: ${params.BUILD_VERSION}"
-
-                dir('18.Jenkins/task-management-api') {
-                    sh 'npm install'
+                dir("${APP_DIR}") {
+                    sh 'npm ci'
                 }
             }
         }
 
-        stage('Run Tests') {
-            when {
-                expression {
-                    return params.RUN_TESTS
-                }
-            }
-
+        stage('Test') {
             steps {
-                echo "Running tests..."
-
-                dir('18.Jenkins/task-management-api') {
+                dir("${APP_DIR}") {
                     sh 'npm test'
                 }
             }
@@ -81,93 +40,48 @@ pipeline {
 
         stage('Docker Build') {
             steps {
-                echo "Building Docker image..."
-
-                dir('18.Jenkins/task-management-api') {
-                    sh 'docker build -t task-api:local .'
-                }
-            }
-        }
-
-        stage('Docker Run') {
-            steps {
-                echo "Starting Docker container..."
-
-                dir('18.Jenkins/task-management-api') {
+                dir("${APP_DIR}") {
                     sh '''
-                        docker rm -f task-api-container 2>/dev/null || true
-
-                        docker run -d \
-                            --name task-api-container \
-                            -p 3000:3000 \
-                            task-api:local
-
-                        echo "Waiting for application..."
-
-                        for i in $(seq 1 10); do
-                            if curl --fail --silent http://host.docker.internal:3000/health; then
-                                echo ""
-                                echo "Health check passed!"
-                                exit 0
-                            fi
-
-                            sleep 1
-                        done
-
-                        echo "Health check failed!"
-                        docker logs task-api-container
-                        exit 1
+                        docker build \
+                          -t "$ECR_REGISTRY/$ECR_REPOSITORY:$GIT_COMMIT" \
+                          .
                     '''
                 }
             }
         }
 
-        stage('Use Credentials') {
+        stage('ECR Login') {
             steps {
-                withCredentials([
-                    string(
-                        credentialsId: 'part2-demo-secret',
-                        variable: 'DEMO_SECRET'
-                    )
-                ]) {
-                    sh '''
-                        test -n "$DEMO_SECRET"
-                        echo "Credential bound successfully"
-                    '''
-                }
+                sh '''
+                    aws ecr get-login-password \
+                      --region "$AWS_REGION" \
+                    | docker login \
+                      --username AWS \
+                      --password-stdin "$ECR_REGISTRY"
+                '''
+            }
+        }
+
+        stage('Push Image') {
+            steps {
+                sh '''
+                    docker push \
+                      "$ECR_REGISTRY/$ECR_REPOSITORY:$GIT_COMMIT"
+                '''
             }
         }
     }
 
     post {
-
         success {
-            echo "BUILD SUCCESSFUL"
-        }
-
-        failure {
-            echo "BUILD FAILED - check the logs"
+            echo "Build and ECR push completed successfully."
+            echo "Image: ${ECR_REGISTRY}/${ECR_REPOSITORY}:${GIT_COMMIT}"
         }
 
         always {
-            sh 'docker rm -f task-api-container 2>/dev/null || true'
-
-            echo "BUILD FINISHED"
-            echo "Environment: ${params.ENV}"
-            echo "Build version: ${params.BUILD_VERSION}"
-
-            writeFile(
-                file: 'build-info.txt',
-                text: """Build version: ${params.BUILD_VERSION}
-Environment: ${params.ENV}
-Build number: ${env.BUILD_NUMBER}
-"""
-            )
-
-            archiveArtifacts(
-                artifacts: 'build-info.txt',
-                allowEmptyArchive: false
-            )
+            sh '''
+                docker image prune -f || true
+            '''
         }
     }
 }
