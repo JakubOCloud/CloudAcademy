@@ -304,6 +304,7 @@ resource "aws_iam_role_policy" "jenkins_infra" {
         Resource = "*"
       },
 
+
       {
         Effect = "Allow"
         Action = [
