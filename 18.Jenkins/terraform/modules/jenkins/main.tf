@@ -172,6 +172,7 @@ resource "aws_iam_role_policy" "jenkins_infra" {
           "ec2:DescribeSecurityGroups",
           "ec2:DescribeNetworkInterfaces",
           "ec2:DescribeTags",
+          "ec2:DescribeAddressesAttribute",
 
           "ec2:CreateVpc",
           "ec2:DeleteVpc",
@@ -226,6 +227,9 @@ resource "aws_iam_role_policy" "jenkins_infra" {
 
           "elasticloadbalancing:CreateLoadBalancer",
           "elasticloadbalancing:DeleteLoadBalancer",
+
+          "elasticloadbalancing:ModifyLoadBalancerAttributes",
+          "elasticloadbalancing:ModifyTargetGroupAttributes",
 
           "elasticloadbalancing:CreateTargetGroup",
           "elasticloadbalancing:DeleteTargetGroup",
