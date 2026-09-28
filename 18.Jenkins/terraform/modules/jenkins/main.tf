@@ -242,6 +242,7 @@ resource "aws_iam_role_policy" "jenkins_infra" {
           "elasticloadbalancing:CreateListener",
           "elasticloadbalancing:DeleteListener",
           "elasticloadbalancing:ModifyListener",
+          "elasticloadbalancing:DescribeListenerAttributes",
 
           "elasticloadbalancing:AddTags",
           "elasticloadbalancing:RemoveTags"
@@ -348,7 +349,8 @@ resource "aws_iam_role_policy" "jenkins_infra" {
           "secretsmanager:PutSecretValue",
           "secretsmanager:UpdateSecret",
           "secretsmanager:TagResource",
-          "secretsmanager:UntagResource"
+          "secretsmanager:UntagResource",
+          "secretsmanager:GetResourcePolicy"
         ]
         Resource = "*"
       },
