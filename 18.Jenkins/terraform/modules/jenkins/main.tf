@@ -225,6 +225,7 @@ resource "aws_iam_role_policy" "jenkins_infra" {
           "elasticloadbalancing:DescribeListeners",
           "elasticloadbalancing:DescribeTargetGroups",
           "elasticloadbalancing:DescribeTargetHealth",
+          "elasticloadbalancing:DescribeTags",
 
           "elasticloadbalancing:CreateLoadBalancer",
           "elasticloadbalancing:DeleteLoadBalancer",
