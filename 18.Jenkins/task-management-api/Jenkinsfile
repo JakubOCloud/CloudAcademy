@@ -1,5 +1,4 @@
 pipeline {
-    agent { label 'ci' }
 
     options {
         timestamps()
@@ -14,46 +13,47 @@ pipeline {
 
         DEV_REPOSITORY = 'task-management-api-dev'
         PROD_REPOSITORY = 'task-management-api-prod'
-
-        DEV_CLUSTER = 'dev-cluster'
-        DEV_SERVICE = 'task-management-api-dev'
-
-        PROD_CLUSTER = 'prod-cluster'
-        PROD_SERVICE = 'task-management-api-prod'
-
-        DEV_ALB = 'dev-alb-1122742776.eu-central-1.elb.amazonaws.com'
-        PROD_ALB = 'prod-alb-555651977.eu-central-1.elb.amazonaws.com'
-
-        APP_DIR = '18.Jenkins/task-management-api'
     }
 
     stages {
 
+        // ============================================================
+        // CI AGENT
+        // ============================================================
+
         stage('Checkout') {
+            agent { label 'ci' }
+
             steps {
                 checkout scm
             }
         }
 
         stage('Install Dependencies') {
+            agent { label 'ci' }
+
             steps {
-                dir("${APP_DIR}") {
+                dir('18.Jenkins/task-management-api') {
                     sh 'npm ci'
                 }
             }
         }
 
         stage('Test') {
+            agent { label 'ci' }
+
             steps {
-                dir("${APP_DIR}") {
+                dir('18.Jenkins/task-management-api') {
                     sh 'npm test'
                 }
             }
         }
 
         stage('Docker Build') {
+            agent { label 'ci' }
+
             steps {
-                dir("${APP_DIR}") {
+                dir('18.Jenkins/task-management-api') {
                     sh '''
                         docker build \
                           -t "$ECR_REGISTRY/$DEV_REPOSITORY:$GIT_COMMIT" \
@@ -64,6 +64,8 @@ pipeline {
         }
 
         stage('ECR Login') {
+            agent { label 'ci' }
+
             steps {
                 sh '''
                     aws ecr get-login-password \
@@ -76,6 +78,8 @@ pipeline {
         }
 
         stage('Push DEV Image') {
+            agent { label 'ci' }
+
             steps {
                 sh '''
                     docker push \
@@ -84,109 +88,99 @@ pipeline {
             }
         }
 
-        stage('Deploy DEV') {
+        // ============================================================
+        // TERRAFORM DEV - INFRA AGENT
+        // ============================================================
+
+        stage('Terraform Init DEV') {
+            agent { label 'infra' }
+
             steps {
-                sh '''
-                    set -e
-
-                    IMAGE="$ECR_REGISTRY/$DEV_REPOSITORY:$GIT_COMMIT"
-
-                    echo "Deploying DEV:"
-                    echo "$IMAGE"
-
-                    CURRENT_TASK_DEF=$(aws ecs describe-services \
-                      --cluster "$DEV_CLUSTER" \
-                      --services "$DEV_SERVICE" \
-                      --region "$AWS_REGION" \
-                      --query 'services[0].taskDefinition' \
-                      --output text)
-
-                    echo "Current task definition:"
-                    echo "$CURRENT_TASK_DEF"
-
-                    aws ecs describe-task-definition \
-                      --task-definition "$CURRENT_TASK_DEF" \
-                      --region "$AWS_REGION" \
-                      --query 'taskDefinition' \
-                      > task-definition.json
-
-                    python3 - "$IMAGE" <<'PY'
-import json
-import sys
-
-image = sys.argv[1]
-
-with open("task-definition.json") as f:
-    task_definition = json.load(f)
-
-for container in task_definition["containerDefinitions"]:
-    if container["name"] == "task-management-api":
-        container["image"] = image
-
-for field in [
-    "taskDefinitionArn",
-    "revision",
-    "status",
-    "requiresAttributes",
-    "compatibilities",
-    "registeredAt",
-    "registeredBy"
-]:
-    task_definition.pop(field, None)
-
-with open("task-definition-new.json", "w") as f:
-    json.dump(task_definition, f)
-
-PY
-
-                    NEW_TASK_DEF=$(aws ecs register-task-definition \
-                      --cli-input-json file://task-definition-new.json \
-                      --region "$AWS_REGION" \
-                      --query 'taskDefinition.taskDefinitionArn' \
-                      --output text)
-
-                    echo "New task definition:"
-                    echo "$NEW_TASK_DEF"
-
-                    aws ecs update-service \
-                      --cluster "$DEV_CLUSTER" \
-                      --service "$DEV_SERVICE" \
-                      --task-definition "$NEW_TASK_DEF" \
-                      --region "$AWS_REGION"
-
-                    aws ecs wait services-stable \
-                      --cluster "$DEV_CLUSTER" \
-                      --services "$DEV_SERVICE" \
-                      --region "$AWS_REGION"
-
-                    echo "DEV deployment completed."
-                '''
+                dir('18.Jenkins/terraform/environments/dev') {
+                    sh '''
+                        terraform init
+                    '''
+                }
             }
         }
+
+        stage('Terraform Plan DEV') {
+            agent { label 'infra' }
+
+            steps {
+                dir('18.Jenkins/terraform/environments/dev') {
+                    sh '''
+                        terraform plan \
+                          -var="image_tag=${GIT_COMMIT}"
+                    '''
+                }
+            }
+        }
+
+        stage('Terraform Apply DEV') {
+            agent { label 'infra' }
+
+            steps {
+                dir('18.Jenkins/terraform/environments/dev') {
+                    sh '''
+                        terraform apply \
+                          -auto-approve \
+                          -var="image_tag=${GIT_COMMIT}"
+                    '''
+                }
+            }
+        }
+
+        // ============================================================
+        // DEV VALIDATION
+        // ============================================================
 
         stage('Smoke Test DEV') {
+            agent { label 'infra' }
+
             steps {
-                sh '''
-                    set -e
+                dir('18.Jenkins/terraform/environments/dev') {
+                    sh '''
+                        set -e
 
-                    echo "Testing DEV:"
-                    curl --fail --silent --show-error \
-                      "http://$DEV_ALB/health"
+                        DEV_ALB=$(terraform output -raw alb_dns_name)
 
-                    echo ""
-                    echo "DEV health check passed."
-                '''
+                        echo "Testing DEV:"
+                        echo "ALB: $DEV_ALB"
+
+                        curl \
+                          --fail \
+                          --silent \
+                          --show-error \
+                          "http://$DEV_ALB/health"
+
+                        echo ""
+                        echo "DEV health check passed."
+                    '''
+                }
             }
         }
 
+        // ============================================================
+        // PRODUCTION APPROVAL
+        // ============================================================
+
         stage('Approve PROD') {
+            agent none
+
             steps {
-                input message: 'DEV deployment succeeded. Deploy this version to PROD?', \
+                input message: 'DEV deployment succeeded. Deploy this version to PROD?',
                       ok: 'Deploy to PROD'
             }
         }
 
+        // ============================================================
+        // PROMOTE IMAGE DEV -> PROD
+        // ============================================================
+
         stage('Promote Image to PROD') {
+            agent { label 'ci' }
+
             steps {
                 sh '''
                     set -e
@@ -212,122 +206,108 @@ PY
             }
         }
 
-        stage('Deploy PROD') {
+        // ============================================================
+        // TERRAFORM PROD - INFRA AGENT
+        // ============================================================
+
+        stage('Terraform Init PROD') {
+            agent { label 'infra' }
+
             steps {
-                sh '''
-                    set -e
-
-                    IMAGE="$ECR_REGISTRY/$PROD_REPOSITORY:$GIT_COMMIT"
-
-                    echo "Deploying PROD:"
-                    echo "$IMAGE"
-
-                    CURRENT_TASK_DEF=$(aws ecs describe-services \
-                      --cluster "$PROD_CLUSTER" \
-                      --services "$PROD_SERVICE" \
-                      --region "$AWS_REGION" \
-                      --query 'services[0].taskDefinition' \
-                      --output text)
-
-                    echo "Current task definition:"
-                    echo "$CURRENT_TASK_DEF"
-
-                    aws ecs describe-task-definition \
-                      --task-definition "$CURRENT_TASK_DEF" \
-                      --region "$AWS_REGION" \
-                      --query 'taskDefinition' \
-                      > task-definition-prod.json
-
-                    python3 - "$IMAGE" <<'PY'
-import json
-import sys
-
-image = sys.argv[1]
-
-with open("task-definition-prod.json") as f:
-    task_definition = json.load(f)
-
-for container in task_definition["containerDefinitions"]:
-    if container["name"] == "task-management-api":
-        container["image"] = image
-
-for field in [
-    "taskDefinitionArn",
-    "revision",
-    "status",
-    "requiresAttributes",
-    "compatibilities",
-    "registeredAt",
-    "registeredBy"
-]:
-    task_definition.pop(field, None)
-
-with open("task-definition-prod-new.json", "w") as f:
-    json.dump(task_definition, f)
-
-PY
-
-                    NEW_TASK_DEF=$(aws ecs register-task-definition \
-                      --cli-input-json file://task-definition-prod-new.json \
-                      --region "$AWS_REGION" \
-                      --query 'taskDefinition.taskDefinitionArn' \
-                      --output text)
-
-                    echo "New PROD task definition:"
-                    echo "$NEW_TASK_DEF"
-
-                    aws ecs update-service \
-                      --cluster "$PROD_CLUSTER" \
-                      --service "$PROD_SERVICE" \
-                      --task-definition "$NEW_TASK_DEF" \
-                      --region "$AWS_REGION"
-
-                    aws ecs wait services-stable \
-                      --cluster "$PROD_CLUSTER" \
-                      --services "$PROD_SERVICE" \
-                      --region "$AWS_REGION"
-
-                    echo "PROD deployment completed."
-                '''
+                dir('18.Jenkins/terraform/environments/prod') {
+                    sh '''
+                        terraform init
+                    '''
+                }
             }
         }
 
-        stage('Smoke Test PROD') {
+        stage('Terraform Plan PROD') {
+            agent { label 'infra' }
+
             steps {
-                sh '''
-                    set -e
+                dir('18.Jenkins/terraform/environments/prod') {
+                    sh '''
+                        terraform plan \
+                          -var="image_tag=${GIT_COMMIT}"
+                    '''
+                }
+            }
+        }
 
-                    echo "Testing PROD:"
-                    curl --fail --silent --show-error \
-                      "http://$PROD_ALB/health"
+        stage('Terraform Apply PROD') {
+            agent { label 'infra' }
 
-                    echo ""
-                    echo "PROD health check passed."
-                '''
+            steps {
+                dir('18.Jenkins/terraform/environments/prod') {
+                    sh '''
+                        terraform apply \
+                          -auto-approve \
+                          -var="image_tag=${GIT_COMMIT}"
+                    '''
+                }
+            }
+        }
+
+        // ============================================================
+        // PROD VALIDATION
+        // ============================================================
+
+        stage('Smoke Test PROD') {
+            agent { label 'infra' }
+
+            steps {
+                dir('18.Jenkins/terraform/environments/prod') {
+                    sh '''
+                        set -e
+
+                        PROD_ALB=$(terraform output -raw alb_dns_name)
+
+                        echo "Testing PROD:"
+                        echo "ALB: $PROD_ALB"
+
+                        curl \
+                          --fail \
+                          --silent \
+                          --show-error \
+                          "http://$PROD_ALB/health"
+
+                        echo ""
+                        echo "PROD health check passed."
+                    '''
+                }
             }
         }
     }
 
+    // ================================================================
+    // POST ACTIONS
+    // ================================================================
+
     post {
+
         success {
-            echo "========================================"
-            echo "CI/CD PIPELINE COMPLETED SUCCESSFULLY"
-            echo "Version: ${GIT_COMMIT}"
-            echo "========================================"
+            echo """
+            ========================================
+            CI/CD PIPELINE COMPLETED SUCCESSFULLY
+            ========================================
+            Version: ${GIT_COMMIT}
+            ========================================
+            """
         }
 
         failure {
-            echo "Pipeline failed."
+            echo 'Pipeline failed.'
         }
 
         always {
-            sh '''
-                docker image prune -f || true
-                rm -f task-definition.json
-                rm -f task-definition-new.json
-                rm -f task-definition-prod.json
-                rm -f task-definition-prod-new.json
-            '''
+            script {
+                try {
+                    sh 'docker image prune -f || true'
+                } catch (Exception ignored) {
+                    echo 'Docker cleanup skipped.'
+                }
+            }
         }
     }
 }
