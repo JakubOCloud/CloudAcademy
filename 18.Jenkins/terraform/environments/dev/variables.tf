@@ -23,3 +23,13 @@ variable "image_tag" {
   type        = string
   default     = "bootstrap-1"
 }
+
+variable "ecr_repository_url" {
+  description = "ECR repository URL"
+  type        = string
+}
+
+variable "ecr_repository_arn" {
+  description = "ECR repository ARN"
+  type        = string
+}
