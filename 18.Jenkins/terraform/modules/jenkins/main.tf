@@ -116,8 +116,8 @@ data "aws_caller_identity" "current" {}
 
 data "aws_region" "current" {}
 
-resource "aws_iam_role_policy" "jenkins_deploy" {
-  name = "${var.environment}-jenkins-deploy-policy"
+resource "aws_iam_role_policy" "jenkins_infra" {
+  name = "${var.environment}-jenkins-infra-policy"
   role = aws_iam_role.jenkins.id
 
   policy = jsonencode({
@@ -125,7 +125,10 @@ resource "aws_iam_role_policy" "jenkins_deploy" {
 
     Statement = [
 
-      # ECR authentication
+      # ============================================================
+      # ECR - CI agent / Docker images
+      # ============================================================
+
       {
         Effect = "Allow"
         Action = [
@@ -134,7 +137,6 @@ resource "aws_iam_role_policy" "jenkins_deploy" {
         Resource = "*"
       },
 
-      # ECR DEV/PROD
       {
         Effect = "Allow"
         Action = [
@@ -152,32 +154,147 @@ resource "aws_iam_role_policy" "jenkins_deploy" {
         ]
       },
 
-      # ECS deployment
+      # ============================================================
+      # EC2 / VPC / Networking
+      # ============================================================
+
       {
         Effect = "Allow"
         Action = [
-          "ecs:DescribeClusters",
-          "ecs:DescribeServices",
-          "ecs:DescribeTaskDefinition",
-          "ecs:DescribeTasks",
-          "ecs:RegisterTaskDefinition"
+          "ec2:DescribeAvailabilityZones",
+          "ec2:DescribeVpcs",
+          "ec2:DescribeVpcAttribute",
+          "ec2:DescribeSubnets",
+          "ec2:DescribeRouteTables",
+          "ec2:DescribeInternetGateways",
+          "ec2:DescribeNatGateways",
+          "ec2:DescribeAddresses",
+          "ec2:DescribeSecurityGroups",
+          "ec2:DescribeNetworkInterfaces",
+          "ec2:DescribeTags",
+
+          "ec2:CreateVpc",
+          "ec2:DeleteVpc",
+          "ec2:ModifyVpcAttribute",
+
+          "ec2:CreateSubnet",
+          "ec2:DeleteSubnet",
+          "ec2:ModifySubnetAttribute",
+
+          "ec2:CreateRouteTable",
+          "ec2:DeleteRouteTable",
+          "ec2:CreateRoute",
+          "ec2:ReplaceRoute",
+          "ec2:DeleteRoute",
+          "ec2:AssociateRouteTable",
+          "ec2:DisassociateRouteTable",
+
+          "ec2:CreateInternetGateway",
+          "ec2:DeleteInternetGateway",
+          "ec2:AttachInternetGateway",
+          "ec2:DetachInternetGateway",
+
+          "ec2:AllocateAddress",
+          "ec2:ReleaseAddress",
+          "ec2:CreateNatGateway",
+          "ec2:DeleteNatGateway",
+
+          "ec2:CreateSecurityGroup",
+          "ec2:DeleteSecurityGroup",
+          "ec2:AuthorizeSecurityGroupIngress",
+          "ec2:AuthorizeSecurityGroupEgress",
+          "ec2:RevokeSecurityGroupIngress",
+          "ec2:RevokeSecurityGroupEgress",
+
+          "ec2:CreateTags",
+          "ec2:DeleteTags"
         ]
         Resource = "*"
       },
 
-      # Update only application services
+      # ============================================================
+      # Application Load Balancer
+      # ============================================================
+
       {
         Effect = "Allow"
         Action = [
-          "ecs:UpdateService"
+          "elasticloadbalancing:DescribeLoadBalancers",
+          "elasticloadbalancing:DescribeListeners",
+          "elasticloadbalancing:DescribeTargetGroups",
+          "elasticloadbalancing:DescribeTargetHealth",
+
+          "elasticloadbalancing:CreateLoadBalancer",
+          "elasticloadbalancing:DeleteLoadBalancer",
+
+          "elasticloadbalancing:CreateTargetGroup",
+          "elasticloadbalancing:DeleteTargetGroup",
+          "elasticloadbalancing:ModifyTargetGroup",
+
+          "elasticloadbalancing:CreateListener",
+          "elasticloadbalancing:DeleteListener",
+          "elasticloadbalancing:ModifyListener",
+
+          "elasticloadbalancing:AddTags",
+          "elasticloadbalancing:RemoveTags"
         ]
-        Resource = [
-          "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:service/dev-cluster/task-management-api-dev",
-          "arn:aws:ecs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:service/prod-cluster/task-management-api-prod"
-        ]
+        Resource = "*"
       },
 
-      # ECS task definition uses these roles
+      # ============================================================
+      # ECS
+      # ============================================================
+
+      {
+        Effect = "Allow"
+        Action = [
+          "ecs:CreateCluster",
+          "ecs:DeleteCluster",
+          "ecs:DescribeClusters",
+
+          "ecs:CreateService",
+          "ecs:UpdateService",
+          "ecs:DeleteService",
+          "ecs:DescribeServices",
+
+          "ecs:RegisterTaskDefinition",
+          "ecs:DeregisterTaskDefinition",
+          "ecs:DescribeTaskDefinition",
+
+          "ecs:ListTaskDefinitions",
+
+          "ecs:TagResource",
+          "ecs:UntagResource"
+        ]
+        Resource = "*"
+      },
+
+      # ============================================================
+      # IAM - roles used by ECS
+      # ============================================================
+
+      {
+        Effect = "Allow"
+        Action = [
+          "iam:GetRole",
+          "iam:CreateRole",
+          "iam:DeleteRole",
+          "iam:UpdateRole",
+          "iam:TagRole",
+          "iam:UntagRole",
+
+          "iam:PutRolePolicy",
+          "iam:DeleteRolePolicy",
+          "iam:GetRolePolicy",
+
+          "iam:AttachRolePolicy",
+          "iam:DetachRolePolicy",
+          "iam:ListAttachedRolePolicies",
+          "iam:ListRolePolicies"
+        ]
+        Resource = "*"
+      },
+
       {
         Effect = "Allow"
         Action = [
@@ -188,6 +305,71 @@ resource "aws_iam_role_policy" "jenkins_deploy" {
           "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/dev-ecs-task-role",
           "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/prod-ecs-execution-role",
           "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/prod-ecs-task-role"
+        ]
+      },
+
+      # ============================================================
+      # CloudWatch Logs
+      # ============================================================
+
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:DeleteLogGroup",
+          "logs:DescribeLogGroups",
+          "logs:PutRetentionPolicy",
+          "logs:DeleteRetentionPolicy",
+          "logs:TagResource",
+          "logs:ListTagsForResource"
+        ]
+        Resource = "*"
+      },
+
+      # ============================================================
+      # Secrets Manager
+      # ============================================================
+
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:CreateSecret",
+          "secretsmanager:DeleteSecret",
+          "secretsmanager:DescribeSecret",
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:PutSecretValue",
+          "secretsmanager:UpdateSecret",
+          "secretsmanager:TagResource",
+          "secretsmanager:UntagResource"
+        ]
+        Resource = "*"
+      },
+
+      # ============================================================
+      # S3 - Terraform remote state
+      # ============================================================
+
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:ListBucket",
+          "s3:GetBucketLocation"
+        ]
+        Resource = "arn:aws:s3:::cloud-academy-jenkins-task-terraform-state"
+      },
+
+      {
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ]
+        Resource = [
+          "arn:aws:s3:::cloud-academy-jenkins-task-terraform-state/dev/terraform.tfstate",
+          "arn:aws:s3:::cloud-academy-jenkins-task-terraform-state/dev/terraform.tfstate.tflock",
+          "arn:aws:s3:::cloud-academy-jenkins-task-terraform-state/prod/terraform.tfstate",
+          "arn:aws:s3:::cloud-academy-jenkins-task-terraform-state/prod/terraform.tfstate.tflock"
         ]
       }
     ]
