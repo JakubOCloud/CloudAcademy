@@ -260,6 +260,9 @@ resource "aws_iam_role_policy" "jenkins_infra" {
           "ecs:CreateCluster",
           "ecs:DeleteCluster",
           "ecs:DescribeClusters",
+          "ecs:ListClusters",
+          "ecs:ListServices",
+          "ecs:ListTasks",
 
           "ecs:CreateService",
           "ecs:UpdateService",

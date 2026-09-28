@@ -145,16 +145,25 @@ pipeline {
                     sh '''
                         set -e
 
+                        echo "Waiting for DEV ECS service to become stable..."
+
+                        aws ecs wait services-stable \
+                          --cluster dev-cluster \
+                          --services task-management-api-dev \
+                          --region "$AWS_REGION"
+
+                        echo "DEV ECS service is stable."
+
                         DEV_ALB=$(terraform output -raw alb_dns_name)
 
                         echo "Testing DEV:"
                         echo "ALB: $DEV_ALB"
 
                         curl \
-                          --fail \
-                          --silent \
-                          --show-error \
-                          "http://$DEV_ALB/health"
+                        --fail \
+                        --silent \
+                        --show-error \
+                        "http://$DEV_ALB/health"
 
                         echo ""
                         echo "DEV health check passed."
@@ -263,16 +272,25 @@ pipeline {
                     sh '''
                         set -e
 
+                        echo "Waiting for PROD ECS service to become stable..."
+
+                        aws ecs wait services-stable \
+                        --cluster prod-cluster \
+                        --services task-management-api-prod \
+                        --region "$AWS_REGION"
+
+                        echo "PROD ECS service is stable."
+
                         PROD_ALB=$(terraform output -raw alb_dns_name)
 
                         echo "Testing PROD:"
                         echo "ALB: $PROD_ALB"
 
                         curl \
-                          --fail \
-                          --silent \
-                          --show-error \
-                          "http://$PROD_ALB/health"
+                        --fail \
+                        --silent \
+                        --show-error \
+                        "http://$PROD_ALB/health"
 
                         echo ""
                         echo "PROD health check passed."
