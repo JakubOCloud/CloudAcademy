@@ -305,15 +305,17 @@ pipeline {
     // ================================================================
 
     post {
-
         success {
-            echo """
+            echo '''
             ========================================
             CI/CD PIPELINE COMPLETED SUCCESSFULLY
             ========================================
-            Version: ${GIT_COMMIT}
+            DEV deployment: SUCCESS
+            PROD deployment: SUCCESS
+            DEV health check: SUCCESS
+            PROD health check: SUCCESS
             ========================================
-            """
+            '''
         }
 
         failure {
