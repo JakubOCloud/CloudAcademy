@@ -1,0 +1,309 @@
+pipeline {
+
+    agent none
+
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+    }
+
+    environment {
+        AWS_REGION = 'eu-central-1'
+        AWS_ACCOUNT_ID = '366183011726'
+
+        ECR_REGISTRY = "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_REGION}.amazonaws.com"
+
+        DEV_REPOSITORY = 'task-management-api-dev'
+        PROD_REPOSITORY = 'task-management-api-prod'
+    }
+
+    stages {
+
+        // CI AGENT
+
+        stage('Checkout') {
+            agent { label 'ci' }
+
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Install Dependencies') {
+            agent { label 'ci' }
+
+            steps {
+                dir('18.Jenkins/task-management-api') {
+                    sh 'npm ci'
+                }
+            }
+        }
+
+        stage('Test') {
+            agent { label 'ci' }
+
+            steps {
+                dir('18.Jenkins/task-management-api') {
+                    sh 'npm test'
+                }
+            }
+        }
+
+        stage('Docker Build') {
+            agent { label 'ci' }
+
+            steps {
+                dir('18.Jenkins/task-management-api') {
+                    sh '''
+                        docker build \
+                          -t "$ECR_REGISTRY/$DEV_REPOSITORY:$GIT_COMMIT" \
+                          .
+                    '''
+                }
+            }
+        }
+
+        stage('ECR Login') {
+            agent { label 'ci' }
+
+            steps {
+                sh '''
+                    aws ecr get-login-password \
+                      --region "$AWS_REGION" \
+                    | docker login \
+                      --username AWS \
+                      --password-stdin "$ECR_REGISTRY"
+                '''
+            }
+        }
+
+        stage('Push DEV Image') {
+            agent { label 'ci' }
+
+            steps {
+                sh '''
+                    docker push \
+                      "$ECR_REGISTRY/$DEV_REPOSITORY:$GIT_COMMIT"
+                '''
+            }
+        }
+
+        // TERRAFORM DEV - INFRA AGENT
+
+        stage('Terraform Init DEV') {
+            agent { label 'infra' }
+
+            steps {
+                dir('18.Jenkins/terraform/environments/dev') {
+                    sh '''
+                        terraform init
+                    '''
+                }
+            }
+        }
+
+        stage('Terraform Plan DEV') {
+            agent { label 'infra' }
+
+            steps {
+                dir('18.Jenkins/terraform/environments/dev') {
+                    sh '''
+                        terraform plan \
+                          -var="image_tag=${GIT_COMMIT}"
+                    '''
+                }
+            }
+        }
+
+        stage('Terraform Apply DEV') {
+            agent { label 'infra' }
+
+            steps {
+                dir('18.Jenkins/terraform/environments/dev') {
+                    sh '''
+                        terraform apply \
+                          -auto-approve \
+                          -var="image_tag=${GIT_COMMIT}"
+                    '''
+                }
+            }
+        }
+
+        // DEV VALIDATION
+
+        stage('Smoke Test DEV') {
+            agent { label 'infra' }
+
+            steps {
+                dir('18.Jenkins/terraform/environments/dev') {
+                    sh '''
+                        set -e
+
+                        echo "Waiting for DEV ECS service to become stable..."
+
+                        aws ecs wait services-stable \
+                          --cluster dev-cluster \
+                          --services task-management-api-dev \
+                          --region "$AWS_REGION"
+
+                        echo "DEV ECS service is stable."
+
+                        DEV_ALB=$(terraform output -raw alb_dns_name)
+
+                        echo "Testing DEV:"
+                        echo "ALB: $DEV_ALB"
+
+                        curl \
+                        --fail \
+                        --silent \
+                        --show-error \
+                        "http://$DEV_ALB/health"
+
+                        echo ""
+                        echo "DEV health check passed."
+                    '''
+                }
+            }
+        }
+
+        // PRODUCTION APPROVAL
+
+        stage('Approve PROD') {
+            agent none
+
+            steps {
+                input message: 'DEV deployment succeeded. Deploy this version to PROD?',
+                      ok: 'Deploy to PROD'
+            }
+        }
+
+        // PROMOTE IMAGE DEV -> PROD
+
+        stage('Promote Image to PROD') {
+            agent { label 'ci' }
+
+            steps {
+                sh '''
+                    set -e
+
+                    DEV_IMAGE="$ECR_REGISTRY/$DEV_REPOSITORY:$GIT_COMMIT"
+                    PROD_IMAGE="$ECR_REGISTRY/$PROD_REPOSITORY:$GIT_COMMIT"
+
+                    echo "Promoting image:"
+                    echo "$DEV_IMAGE"
+                    echo "→"
+                    echo "$PROD_IMAGE"
+
+                    docker pull "$DEV_IMAGE"
+
+                    docker tag \
+                      "$DEV_IMAGE" \
+                      "$PROD_IMAGE"
+
+                    docker push "$PROD_IMAGE"
+
+                    echo "Image promoted to PROD ECR."
+                '''
+            }
+        }
+
+        // TERRAFORM PROD - INFRA AGENT
+
+        stage('Terraform Init PROD') {
+            agent { label 'infra' }
+
+            steps {
+                dir('18.Jenkins/terraform/environments/prod') {
+                    sh '''
+                        terraform init
+                    '''
+                }
+            }
+        }
+
+        stage('Terraform Plan PROD') {
+            agent { label 'infra' }
+
+            steps {
+                dir('18.Jenkins/terraform/environments/prod') {
+                    sh '''
+                        terraform plan \
+                          -var="image_tag=${GIT_COMMIT}"
+                    '''
+                }
+            }
+        }
+
+        stage('Terraform Apply PROD') {
+            agent { label 'infra' }
+
+            steps {
+                dir('18.Jenkins/terraform/environments/prod') {
+                    sh '''
+                        terraform apply \
+                          -auto-approve \
+                          -var="image_tag=${GIT_COMMIT}"
+                    '''
+                }
+            }
+        }
+
+        // PROD VALIDATION
+
+        stage('Smoke Test PROD') {
+            agent { label 'infra' }
+
+            steps {
+                dir('18.Jenkins/terraform/environments/prod') {
+                    sh '''
+                        set -e
+
+                        echo "Waiting for PROD ECS service to become stable..."
+
+                        aws ecs wait services-stable \
+                        --cluster prod-cluster \
+                        --services task-management-api-prod \
+                        --region "$AWS_REGION"
+
+                        echo "PROD ECS service is stable."
+
+                        PROD_ALB=$(terraform output -raw alb_dns_name)
+
+                        echo "Testing PROD:"
+                        echo "ALB: $PROD_ALB"
+
+                        curl \
+                        --fail \
+                        --silent \
+                        --show-error \
+                        "http://$PROD_ALB/health"
+
+                        echo ""
+                        echo "PROD health check passed."
+                    '''
+                }
+            }
+        }
+    }
+
+    // POST ACTIONS
+
+    post {
+        success {
+            echo '''
+            ========================================
+            CI/CD PIPELINE COMPLETED SUCCESSFULLY
+            ========================================
+            DEV deployment: SUCCESS
+            PROD deployment: SUCCESS
+            DEV health check: SUCCESS
+            PROD health check: SUCCESS
+            ========================================
+            '''
+        }
+
+        failure {
+            echo 'Pipeline failed.'
+        }
+    }
+}
