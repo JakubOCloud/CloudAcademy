@@ -1,0 +1,42 @@
+name: Self-Hosted Runner Test
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  test-runner:
+    runs-on: [self-hosted, kubernetes, minikube]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate runner
+        run: |
+          echo "=== Runner information ==="
+          echo "Hostname: $(hostname)"
+          echo "Kernel:"
+          uname -a
+
+          echo ""
+          echo "OS:"
+          cat /etc/os-release
+
+          echo ""
+          echo "CPU:"
+          nproc
+
+          echo ""
+          echo "Memory:"
+          free -h
+
+      - name: Run command inside runner
+        run: |
+          echo "=== Command executed inside Kubernetes runner ==="
+          echo "Hello from GitHub Actions!"
+          echo "Runner hostname: $(hostname)"
+          pwd
+          ls -la
