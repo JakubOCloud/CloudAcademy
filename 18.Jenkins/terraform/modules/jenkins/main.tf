@@ -125,9 +125,7 @@ resource "aws_iam_role_policy" "jenkins_infra" {
 
     Statement = [
 
-      # ============================================================
       # ECR - CI agent / Docker images
-      # ============================================================
 
       {
         Effect = "Allow"
@@ -154,9 +152,7 @@ resource "aws_iam_role_policy" "jenkins_infra" {
         ]
       },
 
-      # ============================================================
       # EC2 / VPC / Networking
-      # ============================================================
 
       {
         Effect = "Allow"
@@ -214,9 +210,7 @@ resource "aws_iam_role_policy" "jenkins_infra" {
         Resource = "*"
       },
 
-      # ============================================================
       # Application Load Balancer
-      # ============================================================
 
       {
         Effect = "Allow"
@@ -250,9 +244,7 @@ resource "aws_iam_role_policy" "jenkins_infra" {
         Resource = "*"
       },
 
-      # ============================================================
       # ECS
-      # ============================================================
 
       {
         Effect = "Allow"
@@ -281,9 +273,7 @@ resource "aws_iam_role_policy" "jenkins_infra" {
         Resource = "*"
       },
 
-      # ============================================================
       # IAM - roles used by ECS
-      # ============================================================
 
       {
         Effect = "Allow"
@@ -321,9 +311,7 @@ resource "aws_iam_role_policy" "jenkins_infra" {
         ]
       },
 
-      # ============================================================
       # CloudWatch Logs
-      # ============================================================
 
       {
         Effect = "Allow"
@@ -339,9 +327,7 @@ resource "aws_iam_role_policy" "jenkins_infra" {
         Resource = "*"
       },
 
-      # ============================================================
       # Secrets Manager
-      # ============================================================
 
       {
         Effect = "Allow"
@@ -359,9 +345,7 @@ resource "aws_iam_role_policy" "jenkins_infra" {
         Resource = "*"
       },
 
-      # ============================================================
       # S3 - Terraform remote state
-      # ============================================================
 
       {
         Effect = "Allow"

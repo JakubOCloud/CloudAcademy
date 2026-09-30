@@ -16,9 +16,7 @@ apt-get install -y \
 # Java 21
 apt-get install -y openjdk-21-jre
 
-# =========================================================
 # Docker
-# =========================================================
 
 install -m 0755 -d /etc/apt/keyrings
 
@@ -44,9 +42,7 @@ apt-get install -y \
 systemctl enable docker
 systemctl start docker
 
-# =========================================================
 # Jenkins
-# =========================================================
 
 curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io-2026.key \
   -o /usr/share/keyrings/jenkins-keyring.asc
@@ -64,17 +60,13 @@ usermod -aG docker jenkins
 systemctl enable jenkins
 systemctl start jenkins
 
-# =========================================================
 # Node.js 22
-# =========================================================
 
 curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
 
 apt-get install -y nodejs
 
-# =========================================================
 # Terraform
-# =========================================================
 
 TERRAFORM_VERSION="1.16.4"
 
@@ -86,9 +78,7 @@ unzip -o /tmp/terraform.zip -d /usr/local/bin/
 
 rm -f /tmp/terraform.zip
 
-# =========================================================
 # AWS CLI v2
-# =========================================================
 
 curl -fsSL \
   "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" \
@@ -102,15 +92,11 @@ unzip -q /tmp/awscliv2.zip -d /tmp
 
 rm -rf /tmp/aws /tmp/awscliv2.zip
 
-# =========================================================
 # Restart Jenkins after Docker group change
-# =========================================================
 
 systemctl restart jenkins
 
-# =========================================================
 # Verification
-# =========================================================
 
 java -version
 docker --version
