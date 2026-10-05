@@ -3,6 +3,11 @@ variable "aws_region" {
   type        = string
 }
 
+variable "cluster_name" {
+  description = "EKS cluster name"
+  type        = string
+}
+
 variable "cluster_endpoint" {
   description = "EKS cluster endpoint"
   type        = string
@@ -15,12 +20,12 @@ variable "cluster_certificate_authority_data" {
 }
 
 variable "github_config_url" {
-  description = "GitHub repository or organization URL used by the runner scale set"
+  description = "GitHub repository or organization URL"
   type        = string
 }
 
 variable "github_token" {
-  description = "GitHub authentication token for ARC"
+  description = "GitHub authentication token"
   type        = string
   sensitive   = true
 }
@@ -32,19 +37,19 @@ variable "namespace" {
 }
 
 variable "runner_scale_set_name" {
-  description = "Name of the GitHub Actions runner scale set"
+  description = "Runner scale set name"
   type        = string
   default     = "finpay-runner"
 }
 
 variable "min_runners" {
-  description = "Minimum number of runner pods"
+  description = "Minimum number of runners"
   type        = number
   default     = 0
 }
 
 variable "max_runners" {
-  description = "Maximum number of runner pods"
+  description = "Maximum number of runners"
   type        = number
   default     = 2
 }
