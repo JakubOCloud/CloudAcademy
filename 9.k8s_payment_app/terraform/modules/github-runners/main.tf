@@ -12,7 +12,7 @@ provider "helm" {
         "--region",
         var.aws_region,
         "--cluster-name",
-        "finpay-prod"
+        var.cluster_name
       ]
     }
   }
@@ -43,16 +43,11 @@ resource "helm_release" "runner_scale_set" {
   values = [
     yamlencode({
       githubConfigUrl = var.github_config_url
-      githubConfigSecret = {
-        github_token = var.github_token
-      }
+
+      githubConfigSecret = "github-runner-auth"
 
       minRunners = var.min_runners
       maxRunners = var.max_runners
-
-      containerMode = {
-        type = "dind"
-      }
 
       template = {
         spec = {

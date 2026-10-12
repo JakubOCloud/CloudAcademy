@@ -24,12 +24,6 @@ variable "github_config_url" {
   type        = string
 }
 
-variable "github_token" {
-  description = "GitHub authentication token"
-  type        = string
-  sensitive   = true
-}
-
 variable "namespace" {
   description = "Namespace for GitHub Actions runners"
   type        = string
