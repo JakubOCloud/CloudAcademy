@@ -25,6 +25,17 @@ resource "helm_release" "arc_controller" {
 
   repository = "oci://ghcr.io/actions/actions-runner-controller-charts"
   chart      = "gha-runner-scale-set-controller"
+  version    = "0.15.0"
+
+  values = [
+    yamlencode({
+      image = {
+        repository = "366183011726.dkr.ecr.eu-central-1.amazonaws.com/github/actions/gha-runner-scale-set-controller"
+        tag        = "0.15.0"
+        pullPolicy = "IfNotPresent"
+      }
+    })
+  ]
 
   wait    = true
   timeout = 600
@@ -46,6 +57,15 @@ resource "helm_release" "runner_scale_set" {
 
       githubConfigSecret = "github-runner-auth"
 
+      containerMode = {
+        type = "dind"
+        dind = {
+          container = {
+            image = "366183011726.dkr.ecr.eu-central-1.amazonaws.com/docker-hub/library/docker:dind"
+          }
+        }
+      }
+
       minRunners = var.min_runners
       maxRunners = var.max_runners
 
@@ -54,7 +74,7 @@ resource "helm_release" "runner_scale_set" {
           containers = [
             {
               name  = "runner"
-              image = "ghcr.io/actions/actions-runner:latest"
+              image = "366183011726.dkr.ecr.eu-central-1.amazonaws.com/github/actions-runner:latest"
 
               resources = {
                 requests = {
