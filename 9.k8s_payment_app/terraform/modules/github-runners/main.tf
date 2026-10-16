@@ -68,6 +68,7 @@ resource "helm_release" "arc_controller" {
   timeout = 600
 }
 
+
 resource "helm_release" "runner_scale_set" {
   name      = var.runner_scale_set_name
   namespace = var.namespace
@@ -80,18 +81,8 @@ resource "helm_release" "runner_scale_set" {
 
   values = [
     yamlencode({
-      githubConfigUrl = var.github_config_url
-
+      githubConfigUrl    = var.github_config_url
       githubConfigSecret = "github-runner-auth"
-
-      containerMode = {
-        type = "dind"
-        dind = {
-          container = {
-            image = "366183011726.dkr.ecr.eu-central-1.amazonaws.com/docker-hub/library/docker:dind"
-          }
-        }
-      }
 
       proxy = {
         http = {
@@ -115,22 +106,110 @@ resource "helm_release" "runner_scale_set" {
 
       template = {
         spec = {
+          initContainers = [
+            {
+              name  = "init-dind-externals"
+              image = "366183011726.dkr.ecr.eu-central-1.amazonaws.com/github/actions/actions-runner:latest"
+              command = [
+                "/bin/bash",
+                "-c",
+                "cp -r /home/runner/externals/. /home/runner/tmpDir/"
+              ]
+
+              volumeMounts = [
+                {
+                  name      = "dind-externals"
+                  mountPath = "/home/runner/tmpDir"
+                }
+              ]
+            }
+          ]
+
           containers = [
             {
-              name  = "runner"
-              image = "366183011726.dkr.ecr.eu-central-1.amazonaws.com/github/actions-runner:latest"
+              name    = "runner"
+              image   = "366183011726.dkr.ecr.eu-central-1.amazonaws.com/github/actions/actions-runner:latest"
+              command = ["/home/runner/run.sh"]
+
+              env = [
+                {
+                  name  = "DOCKER_HOST"
+                  value = "unix:///var/run/docker.sock"
+                }
+              ]
+
+              volumeMounts = [
+                {
+                  name      = "work"
+                  mountPath = "/home/runner/_work"
+                },
+                {
+                  name      = "dind-sock"
+                  mountPath = "/var/run"
+                }
+              ]
 
               resources = {
                 requests = {
                   cpu    = "500m"
                   memory = "1Gi"
                 }
-
                 limits = {
                   cpu    = "1"
                   memory = "2Gi"
                 }
               }
+            },
+            {
+              name  = "dind"
+              image = "366183011726.dkr.ecr.eu-central-1.amazonaws.com/docker-hub/library/docker:dind"
+
+              args = [
+                "dockerd",
+                "--host=unix:///var/run/docker.sock",
+                "--group=$(DOCKER_GROUP_GID)"
+              ]
+
+              env = [
+                {
+                  name  = "DOCKER_GROUP_GID"
+                  value = "123"
+                }
+              ]
+
+              securityContext = {
+                privileged = true
+              }
+
+              volumeMounts = [
+                {
+                  name      = "work"
+                  mountPath = "/home/runner/_work"
+                },
+                {
+                  name      = "dind-sock"
+                  mountPath = "/var/run"
+                },
+                {
+                  name      = "dind-externals"
+                  mountPath = "/home/runner/externals"
+                }
+              ]
+            }
+          ]
+
+          volumes = [
+            {
+              name     = "work"
+              emptyDir = {}
+            },
+            {
+              name     = "dind-sock"
+              emptyDir = {}
+            },
+            {
+              name     = "dind-externals"
+              emptyDir = {}
             }
           ]
         }
