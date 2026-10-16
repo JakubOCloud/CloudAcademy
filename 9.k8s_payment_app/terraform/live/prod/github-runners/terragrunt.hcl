@@ -14,6 +14,10 @@ dependency "eks" {
   config_path = "../eks"
 }
 
+dependency "proxy" {
+  config_path = "../egress-proxy"
+}
+
 inputs = {
   aws_region     = "eu-central-1"
   cluster_name   = local.env.locals.cluster_name
@@ -29,4 +33,6 @@ inputs = {
 
   min_runners = 0
   max_runners = 2
+
+  proxy_url = dependency.proxy.outputs.proxy_url
 }

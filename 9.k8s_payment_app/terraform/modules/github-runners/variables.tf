@@ -47,3 +47,8 @@ variable "max_runners" {
   type        = number
   default     = 2
 }
+
+variable "proxy_url" {
+  description = "HTTPS proxy URL used by ARC and runners"
+  type        = string
+}
