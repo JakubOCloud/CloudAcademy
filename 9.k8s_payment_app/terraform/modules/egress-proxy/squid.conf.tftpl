@@ -1,0 +1,31 @@
+#!/bin/bash
+set -euxo pipefail
+
+dnf install -y squid
+
+cat > /etc/squid/squid.conf <<'SQUID'
+http_port 3128
+
+acl allowed_clients src ${join(" ", allowed_client_cidrs)}
+acl SSL_ports port 443
+acl Safe_ports port 80 443
+acl CONNECT method CONNECT
+
+# GitHub API and Actions endpoints
+acl github_domains dstdomain \
+  .github.com \
+  .githubusercontent.com \
+  .githubassets.com \
+  .actions.githubusercontent.com
+
+http_access deny !Safe_ports
+http_access deny CONNECT !SSL_ports
+http_access allow allowed_clients github_domains
+http_access deny all
+
+cache deny all
+access_log stdio:/var/log/squid/access.log
+SQUID
+
+systemctl enable squid
+systemctl restart squid
