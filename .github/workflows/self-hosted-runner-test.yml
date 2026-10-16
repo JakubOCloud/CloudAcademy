@@ -1,4 +1,4 @@
-name: Self-hosted Runner Test
+name: Self-hosted k8s Runner Test
 
 on:
   workflow_dispatch:
