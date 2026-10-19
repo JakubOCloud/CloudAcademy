@@ -1,7 +1,6 @@
 name: Self-Hosted Runner Test
 
 on:
-  push:
   workflow_dispatch:
 
 jobs:
