@@ -3,29 +3,34 @@ set -euxo pipefail
 
 dnf install -y squid
 
-cat > /etc/squid/squid.conf <<'SQUID'
+sudo tee /etc/squid/squid.conf > /dev/null <<'SQUID'
 http_port 3128
 
-acl allowed_clients src ${join(" ", allowed_client_cidrs)}
+acl allowed_clients src 10.20.11.0/24 10.20.12.0/24 10.20.13.0/24
+
 acl SSL_ports port 443
 acl Safe_ports port 80 443
 acl CONNECT method CONNECT
 
-# GitHub API and Actions endpoints
-acl github_domains dstdomain \
-  .github.com \
-  .githubusercontent.com \
-  .githubassets.com \
-  .actions.githubusercontent.com
+acl github_domains dstdomain .github.com .githubusercontent.com .githubassets.com .actions.githubusercontent.com
+acl aws_domains dstdomain .amazonaws.com .awsstatic.com
+acl aws_cli_download dstdomain awscli.amazonaws.com
+acl ubuntu_domains dstdomain archive.ubuntu.com security.ubuntu.com ppa.launchpadcontent.net
 
 http_access deny !Safe_ports
 http_access deny CONNECT !SSL_ports
+
 http_access allow allowed_clients github_domains
+http_access allow allowed_clients aws_domains
+http_access allow allowed_clients aws_cli_download
+http_access allow allowed_clients ubuntu_domains
+
 http_access deny all
 
 cache deny all
 access_log stdio:/var/log/squid/access.log
 SQUID
 
+squid -k parse
 systemctl enable squid
 systemctl restart squid
