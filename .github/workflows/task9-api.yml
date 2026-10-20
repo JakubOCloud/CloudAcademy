@@ -57,7 +57,7 @@ jobs:
             --build-arg HTTPS_PROXY="$HTTPS_PROXY" \
             --build-arg NO_PROXY="$NO_PROXY" \
             -f Dockerfile.api \
-            -t 366183011726.dkr.ecr.eu-central-1.amazonaws.com/payment-api:latest 
+            -t 366183011726.dkr.ecr.eu-central-1.amazonaws.com/payment-api:latest \
             -t 366183011726.dkr.ecr.eu-central-1.amazonaws.com/payment-api:${SHA_TAG} \
             .
 
