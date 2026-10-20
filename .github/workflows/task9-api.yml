@@ -57,7 +57,9 @@ jobs:
             --build-arg HTTPS_PROXY="$HTTPS_PROXY" \
             --build-arg NO_PROXY="$NO_PROXY" \
             -f Dockerfile.api \
-            -t "$ECR_REGISTRY/payment-api:$GITHUB_SHA" .
+            -t 366183011726.dkr.ecr.eu-central-1.amazonaws.com/payment-worker:latest \
+            -t 366183011726.dkr.ecr.eu-central-1.amazonaws.com/payment-worker:${SHA_TAG} \ 
+            .
 
       - name: Trivy scan
         uses: aquasecurity/trivy-action@v0.36.0
