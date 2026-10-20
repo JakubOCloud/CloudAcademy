@@ -25,6 +25,17 @@ http_access allow allowed_clients aws_domains
 http_access allow allowed_clients aws_cli_download
 http_access allow allowed_clients ubuntu_domains
 
+acl docker_registry dstdomain .docker.io .docker.com
+acl docker_auth dstdomain auth.docker.io
+acl docker_blob dstdomain .blob.core.windows.net
+
+http_access allow docker_registry
+http_access allow docker_auth
+http_access allow docker_blob
+
+acl maven_central dstdomain repo.maven.apache.org
+http_access allow maven_central
+
 http_access deny all
 
 cache deny all
