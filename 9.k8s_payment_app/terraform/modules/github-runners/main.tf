@@ -68,13 +68,13 @@ resource "helm_release" "arc_controller" {
   timeout = 600
 }
 
-
 resource "helm_release" "runner_scale_set" {
   name      = var.runner_scale_set_name
   namespace = var.namespace
 
   repository = "oci://ghcr.io/actions/actions-runner-controller-charts"
   chart      = "gha-runner-scale-set"
+  version    = "0.15.0"
 
   wait    = true
   timeout = 600
@@ -110,6 +110,7 @@ resource "helm_release" "runner_scale_set" {
             {
               name  = "init-dind-externals"
               image = "366183011726.dkr.ecr.eu-central-1.amazonaws.com/github/actions/actions-runner:latest"
+
               command = [
                 "/bin/bash",
                 "-c",
@@ -174,6 +175,30 @@ resource "helm_release" "runner_scale_set" {
                 {
                   name  = "DOCKER_GROUP_GID"
                   value = "123"
+                },
+                {
+                  name  = "HTTP_PROXY"
+                  value = var.proxy_url
+                },
+                {
+                  name  = "HTTPS_PROXY"
+                  value = var.proxy_url
+                },
+                {
+                  name  = "http_proxy"
+                  value = var.proxy_url
+                },
+                {
+                  name  = "https_proxy"
+                  value = var.proxy_url
+                },
+                {
+                  name  = "NO_PROXY"
+                  value = "localhost,127.0.0.1,.svc,.cluster.local,10.20.0.0/16,172.20.0.0/16"
+                },
+                {
+                  name  = "no_proxy"
+                  value = "localhost,127.0.0.1,.svc,.cluster.local,10.20.0.0/16,172.20.0.0/16"
                 }
               ]
 
