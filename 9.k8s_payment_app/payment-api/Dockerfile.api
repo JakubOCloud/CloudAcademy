@@ -16,7 +16,7 @@ RUN mkdir -p /root/.m2 && \
     '      <id>squid-proxy</id>' \
     '      <active>true</active>' \
     '      <protocol>http</protocol>' \
-    '      <host>10.20.1.89</host>' \
+    '      <host>10.20.1.196</host>' \
     '      <port>3128</port>' \
     '      <nonProxyHosts>localhost|127.0.0.1</nonProxyHosts>' \
     '    </proxy>' \
