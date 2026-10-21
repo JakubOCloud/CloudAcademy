@@ -61,6 +61,14 @@ jobs:
             -t 366183011726.dkr.ecr.eu-central-1.amazonaws.com/payment-api:${SHA_TAG} \
             .
 
+      - name: Debug proxy
+        run: |
+          echo "Checking proxy configuration"
+          env | grep -i proxy | sed -E 's#(https?://)[^/@]+:[^/@]+@#\1***@#g'
+          curl -sSIL --connect-timeout 10 \
+            -x http://10.20.1.196:3128 \
+            https://github.com/aquasecurity/trivy/releases/tag/v0.70.0
+
       - name: Trivy scan
         uses: aquasecurity/trivy-action@v0.36.0
         env:
