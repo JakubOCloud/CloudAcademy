@@ -53,9 +53,9 @@ jobs:
       - name: Build Docker Image
         run: |
           docker build \
-            --build-arg HTTP_PROXY="$HTTP_PROXY" \
-            --build-arg HTTPS_PROXY="$HTTPS_PROXY" \
-            --build-arg NO_PROXY="$NO_PROXY" \
+            --build-arg HTTP_PROXY=http://10.20.1.196/3128 \
+            --build-arg HTTPS_PROXY=http://10.20.1.196/3128 \
+            --build-arg NO_PROXY=localhost,127.0.0.1,.svc,.cluster.local,10.20.0.0/16,172.20.0.0/16 \
             -f Dockerfile.api \
             -t 366183011726.dkr.ecr.eu-central-1.amazonaws.com/payment-api:latest \
             -t 366183011726.dkr.ecr.eu-central-1.amazonaws.com/payment-api:${SHA_TAG} \
