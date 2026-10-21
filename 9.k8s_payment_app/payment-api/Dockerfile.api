@@ -8,6 +8,22 @@ ARG NO_PROXY
 
 COPY pom.xml .
 
+RUN mkdir -p /root/.m2 && \
+    printf '%s\n' \
+    '<settings xmlns="http://maven.apache.org/SETTINGS/1.2.0">' \
+    '  <proxies>' \
+    '    <proxy>' \
+    '      <id>squid-proxy</id>' \
+    '      <active>true</active>' \
+    '      <protocol>http</protocol>' \
+    '      <host>10.20.1.89</host>' \
+    '      <port>3128</port>' \
+    '      <nonProxyHosts>localhost|127.0.0.1</nonProxyHosts>' \
+    '    </proxy>' \
+    '  </proxies>' \
+    '</settings>' \
+    > /root/.m2/settings.xml
+
 RUN mvn dependency:go-offline
 
 COPY src ./src
