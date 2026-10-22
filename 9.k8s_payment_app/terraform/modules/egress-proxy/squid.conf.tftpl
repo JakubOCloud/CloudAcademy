@@ -14,6 +14,8 @@ acl CONNECT method CONNECT
 
 acl github_domains dstdomain .github.com .githubusercontent.com .githubassets.com .actions.githubusercontent.com
 acl aws_domains dstdomain .amazonaws.com .awsstatic.com
+acl trivy_db dstdomain mirror.gcr.io
+acl trivy_domains dstdomain get.trivy.dev
 acl aws_cli_download dstdomain awscli.amazonaws.com
 acl ubuntu_domains dstdomain archive.ubuntu.com security.ubuntu.com ppa.launchpadcontent.net
 
@@ -21,6 +23,7 @@ http_access deny !Safe_ports
 http_access deny CONNECT !SSL_ports
 
 http_access allow allowed_clients github_domains
+http_access allow allowed_clients trivy_domains
 http_access allow allowed_clients aws_domains
 http_access allow allowed_clients aws_cli_download
 http_access allow allowed_clients ubuntu_domains
@@ -32,6 +35,7 @@ acl docker_blob dstdomain .blob.core.windows.net
 http_access allow docker_registry
 http_access allow docker_auth
 http_access allow docker_blob
+http_access allow allowed_clients trivy_db
 
 acl maven_central dstdomain repo.maven.apache.org
 http_access allow maven_central
